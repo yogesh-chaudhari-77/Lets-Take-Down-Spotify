@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+
+<!--Head tag goes here -->
+<%- include('./../partials/head.ejs'); %>
+
+  <script>
+
+    function login() {
+      let ajaxRequest = new ajaxFunction();
+      let id = document.getElementById("id").value;
+      let password = document.getElementById("password").value;
+
+      var form_data = new FormData();
+      form_data.append("id", id);
+      form_data.append("password", password);
+
+      ajaxRequest.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            document.getElementById("login_form_err_msg").style.display = "block";
+            document.getElementById("login_form_err_msg").innerHTML = "email or password is invalid";
+            return;
+          } else {
+
+            // Clear the error messages if any
+            document.getElementById("login_form_err_msg").style.display = "none";
+            document.getElementById("login_form_err_msg").innerHTML = "";
+
+            // Redirect to the forum home screen
+            window.location = "{{config.application.base_url}}forum";
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "POST", "{{config.application.base_url}}login", form_data, null);
+    }
+    // End of login()
+
+  </script>
+
+  <body>
+    <!-- Header goes here -->
+    <%- include('./../partials/navbar.ejs'); %>
+
+      <!-- Actual body goes here -->
+      <div class="container mt-4">
+        <div class="row">
+          <div class="col-md-4 col-xs-12 col-lg-4"></div>
+          <div class="col-md-4 col-xs-12 col-lg-4">
+            <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+              <div class="card-body">
+                <h5 class="card-title">Login</h5>
+                <h6 class="card-subtitle mb-2 text-muted">It's good to see you back!</h6>
+
+                <form onsubmit="event.preventDefault();" id="login_form">
+
+                  <div class="form-group mb-3">
+                    <label class="control-label" for="id">Email:</label>
+                    <input type="email" id="id" class="input-md form-control" value="s3828116@student.rmit.edu.au" required />
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="control-label" for="password">Password:</label>
+                    <input type="password" id="password" class="input-md form-control" value="012345" required />
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="text-danger" id="login_form_err_msg" style="display:none"></label>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <button class="btn btn-outline-success btn-md form-control" onclick="login();">Login</button>
+                  </div>
+                </form>
+
+                Don't have an account? <a href="#">Register here</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Actual body ends here-->
+
+      <!-- Footer goes here -->
+      <%- include('./../partials/footer.ejs'); %>
+  </body>
+
+</html>

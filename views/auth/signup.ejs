@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<!--Head tag goes here -->
+<%- include('./../partials/head.ejs'); %>
+
+    <script>
+
+        function register() {
+            let ajaxRequest = new ajaxFunction();
+
+            // Getting basic fields
+            let email = document.getElementById("email").value;
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            // Packing the data packet
+            var form_data = new FormData();
+            form_data.append("email", email);
+            form_data.append("username", username);
+            form_data.append("password", password);
+
+            ajaxRequest.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        document.getElementById("register_form_err_msg").style.display = "block";
+                        document.getElementById("register_form_err_msg").innerHTML = response.err_msg;
+                        return;
+                    } else {
+
+                        // Clear the error messages if any
+                        document.getElementById("register_form_err_msg").style.display = "none";
+                        document.getElementById("register_form_err_msg").innerHTML = "";
+
+                        // Redirect to the login page for re-login using new credentials
+                        window.location = "{{config.application.base_url}}login";
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "#", form_data, null);
+        }
+        // end of register function
+
+    </script>
+
+    <body>
+        <!-- Header goes here -->
+        <%- include('./../partials/navbar.ejs'); %>
+
+            <!-- Actual body goes here -->
+            <div class="container mt-3">
+                <div class="row">
+                    <div class="col-xs-12 col-md-4 col-lg-4">
+
+                        <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+                            <div class="card-body">
+                                <h5 class="card-title">Register</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Awesome music is awating</h6>
+
+                                <form onsubmit="event.preventDefault();" id="register_form">
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="email">ID:</label>
+                                        <input type="email" id="email" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="username">Username:</label>
+                                        <input type="text" id="username" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="password">Password:</label>
+                                        <input type="password" id="password" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <span class="text-danger" id="register_form_err_msg"
+                                            style="display:none;"></span>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <button class="btn btn-outline-success btn-md form-control"
+                                            onclick="register();">Let's Get
+                                            Started</button>
+                                    </div>
+                                </form>
+
+                                Already have an account ? <a href="#">Login here</a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+            <!-- Actual body ends here-->
+
+            <!-- Footer goes here -->
+            <%- include('./../partials/footer.ejs'); %>
+    </body>
+
+</html>
