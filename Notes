@@ -1,0 +1,27 @@
+Install Express
+npm install express
+
+Installing other 3rd party libraries
+npm install bootstrap@next jquery popper
+
+Install the DynamoDB dependancy
+npm install @aws-sdk/client-dynamodb
+
+Installing S3 dependancy
+npm install @aws-sdk/client-s3
+
+Installing EC2 dependancy 
+npm install @aws-sdk/client-ec2
+
+Accessing the DynamoDB using the API
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Using.API.html
+
+Getting started with the NodeJS and the DynamoDB 
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/SettingUp.html
+
+
+
+Accessing the DynamoDB - 
+Create a Administrator IAM role
+
+
