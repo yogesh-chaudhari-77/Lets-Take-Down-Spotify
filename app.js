@@ -3,7 +3,8 @@ const express = require('express');
 // System requires
 const os = require("os");
 const path = require('path');
-var fs = require('fs');
+const fs = require('fs');
+const http = require('http');
 
 // Third part requires
 const formidableMiddleware = require('express-formidable');
@@ -22,7 +23,9 @@ AWS.config.update({
     secretAccessKey: aws_config.secret_access_key
 });
 
-var dynamodb = new AWS.DynamoDB();
+// The region is seeting is updated globally
+var dynamodb_client = new AWS.DynamoDB();
+var s3_client = new AWS.S3();
 
 // Init the express app
 const app = express();
@@ -75,7 +78,7 @@ app.get("create_music_table", (req, res) => {
         }
     };
 
-    dynamodb.createTable(params, function (err, data) {
+    dynamodb_client.createTable(params, function (err, data) {
         if (err) {
             console.error("Unable to create table. Error JSON:", JSON.stringify(err, null, 2));
         } else {
@@ -109,7 +112,7 @@ app.get("/populate_music_table", (req, res) => {
             }
         };
 
-        dynamodb.putItem(params, function (err, data) {
+        dynamodb_client.putItem(params, function (err, data) {
             if (err) {
                 console.log("err", err);
             }
@@ -122,6 +125,63 @@ app.get("/populate_music_table", (req, res) => {
     res.send("<pre>Database loaded</pre>");
 });
 // End of populate_music_table
+
+/**
+ * [3]
+ * This function downloads images from the img_url attribute and saves it locally.
+ */
+app.get("/download_images_from_url", (req, res) => {
+
+    var music_objects = JSON.parse(fs.readFileSync('a2.json', 'utf8'));
+
+    for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
+
+        const img_url = music_objects["songs"][i].img_url;
+        const url_tokens = img_url.split("/");
+        const download_file_ref = fs.createWriteStream("public/downloaded_images/" + url_tokens[(url_tokens.length - 1)]);      // Extract the file name from target url
+
+        http.get(img_url, function (response) {
+            response.pipe(download_file_ref);
+        });
+    }
+
+    res.send("All Images have been downloaded successfully.");
+});
+
+
+/**
+ * [4] [5] 
+ * The downloaded images will be uploaded to the s3 bucket
+ */
+app.get("/upload_images_to_s3", (req, res) => {
+
+    fs.readdir("public/downloaded_images/", function (err, files) {
+
+        for (let f = 0; f < files.length; f++) {
+
+            const fileContent = fs.readFileSync("public/downloaded_images/" + files[f]);
+
+            // Setting up S3 upload parameters
+            const params = {
+                Bucket: aws_config.s3_config.bucket_name,
+                Key: files[f],                             // File name you want to save as in S3
+                Body: fileContent
+            };
+
+            
+            s3_client.upload(params, function (err, data) {
+                if (err) {
+                    throw err;
+                }
+                console.log('File uploaded successfully', data.Location);
+                res.send("File uploaded successfully. "+data.Location);
+            });
+        }
+    });
+
+    
+});
+
 
 // User auth routes
 app.get("/login", (req, res) => {
