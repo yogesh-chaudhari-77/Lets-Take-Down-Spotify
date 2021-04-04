@@ -204,7 +204,7 @@ app.post("/login", (req, res) => {
 
     var params = {    
         TableName: 'login',
-        ProjectionExpression: 'email, password',           // Equivalent to select clause
+        ProjectionExpression: 'email, password, username',           // Equivalent to select clause
         KeyConditionExpression: 'email = :e',     // Equivalent to where clause
 
         
@@ -223,6 +223,8 @@ app.post("/login", (req, res) => {
             // Validating Password
             if(password == record.password.S){
                 req.session.email = record.email.S;
+                req.session.username = record.username.S;
+
                 res.json({"status" : "success"});
             }else{
                 res.json({"status" : "failed"});
@@ -232,13 +234,69 @@ app.post("/login", (req, res) => {
             console.log(err);
             res.json({"status" : "failed"});
         }
-        
+
       });
 });
 
 
 app.get("/signup", (req, res) => {
     res.render("auth/signup");
+});
+
+app.post("/signup", (req, res) => {
+    
+    const email = req.fields.email;
+    const username = req.fields.username;
+    const password = req.fields.password;
+
+    var params = {    
+        TableName: 'login',
+        ProjectionExpression: 'email',           // Equivalent to select clause
+        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
+
+        
+        ExpressionAttributeValues: {
+          ':e': {S: email}
+        }
+      };
+
+      dynamodb_client.query(params, (err, data) => {
+        
+        console.log("data --> ", data);
+        // There is no record with given email
+        if(data.Items.length == 0){
+            
+            var create_user_login = () => {
+
+                var params = {
+                    TableName: 'login',
+                    Item: {
+                        'email': { S: email },
+                        'password': { S: password },
+                        'username': { S: username }
+                    }
+                };
+
+                // Call DynamoDB to add the item to the table
+                dynamodb_client.putItem(params, (err, data) => {
+                    if (err) {
+                        console.error("Error", err);
+                        res.json({"status": "failed", "err_msg" : "Unknown error occured. Please try again."});
+                    } else {
+                        res.json({"status": "success"});
+                    }
+                });
+            }
+
+            create_user_login();
+
+        }else{
+            console.log(err);
+            res.json({"status" : "failed", "err_msg" : "The email already exists."});
+        }
+
+      });
+
 });
 
 /**

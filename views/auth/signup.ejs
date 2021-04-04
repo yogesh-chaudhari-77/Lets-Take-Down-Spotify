@@ -35,12 +35,12 @@
                         document.getElementById("register_form_err_msg").innerHTML = "";
 
                         // Redirect to the login page for re-login using new credentials
-                        window.location = "{{config.application.base_url}}login";
+                        window.location = "/login";
                     }
                 }
             };
 
-            send_request(ajaxRequest, "POST", "#", form_data, null);
+            send_request(ajaxRequest, "POST", "/signup", form_data, null);
         }
         // end of register function
 
@@ -63,7 +63,7 @@
                                 <form onsubmit="event.preventDefault();" id="register_form">
 
                                     <div class="form-group mb-3">
-                                        <label class="control-label" for="email">ID:</label>
+                                        <label class="control-label" for="email">Email:</label>
                                         <input type="email" id="email" class="input-md form-control" required />
                                     </div>
 
@@ -89,7 +89,7 @@
                                     </div>
                                 </form>
 
-                                Already have an account ? <a href="#">Login here</a>
+                                Already have an account ? <a href="/login">Login here</a>
                             </div>
                         </div>
 

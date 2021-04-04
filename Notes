@@ -25,3 +25,5 @@ Accessing the DynamoDB -
 Create a Administrator IAM role
 
 
+Important document for CRUD operations in AWS dynamodb
+https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html
