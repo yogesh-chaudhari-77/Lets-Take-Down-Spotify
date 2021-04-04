@@ -9,7 +9,8 @@ const http = require('http');
 // Third part requires
 const formidableMiddleware = require('express-formidable');
 const cookieParser = require('cookie-parser');
-const { v4: uuidv4 } = require('uuid')
+const { v4: uuidv4 } = require('uuid');
+var session = require('express-session');
 
 //AWS Requires
 var AWS = require("aws-sdk");
@@ -39,6 +40,11 @@ app.use(express.static("node_modules"));
 
 // For accesing post variables - formiable middleware
 app.use(formidableMiddleware());
+app.use(session({
+    secret: 'This is my session secret key. How Creative am I',
+    resave: false,
+    saveUninitialized: true
+  }));
 
 // Setting view engine
 app.set('view engine', 'ejs');
@@ -188,8 +194,61 @@ app.get("/login", (req, res) => {
     res.render("auth/login");
 });
 
+/**
+ * [7]
+ */
+app.post("/login", (req, res) => {
+    
+    const email = req.fields.email;
+    const password = req.fields.password;
+
+    var params = {    
+        TableName: 'login',
+        ProjectionExpression: 'email, password',           // Equivalent to select clause
+        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
+
+        
+        ExpressionAttributeValues: {
+          ':e': {S: email}
+        }
+      };
+
+      dynamodb_client.query(params, (err, data) => {
+        
+        // Validating matching records count
+        if(data != null && data.Items.length == 1){
+            
+            const record = data.Items[0];
+
+            // Validating Password
+            if(password == record.password.S){
+                req.session.email = record.email.S;
+                res.json({"status" : "success"});
+            }else{
+                res.json({"status" : "failed"});
+            }
+            
+        }else{
+            console.log(err);
+            res.json({"status" : "failed"});
+        }
+        
+      });
+});
+
+
 app.get("/signup", (req, res) => {
     res.render("auth/signup");
+});
+
+/**
+ * Logout Function - Destroys the session and then redirects to the home page.
+ */
+app.get("/logout", (req, res) => {
+    
+    req.session.destroy(function(err) {
+        res.redirect("/");
+    })
 });
 
 // 404 page 

@@ -20,3 +20,11 @@ Creating and using Amazon S3 buckets - AWS SDK for JavaScript (2021). Available 
 [5] - Create and upload objects to s3
 Uploading Files to AWS S3 with Node.js
 Uploading Files to AWS S3 with Node.js (2021). Available at: https://stackabuse.com/uploading-files-to-aws-s3-with-node-js/ (Accessed: 4 April 2021).
+
+[6]
+express-session
+express-session (2020). Available at: https://www.npmjs.com/package/express-session (Accessed: 4 April 2021).
+
+[7]
+Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript
+Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript (2021). Available at: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html (Accessed: 4 April 2021).

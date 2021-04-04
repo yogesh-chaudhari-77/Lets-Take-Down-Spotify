@@ -8,11 +8,11 @@
 
     function login() {
       let ajaxRequest = new ajaxFunction();
-      let id = document.getElementById("id").value;
+      let email = document.getElementById("email").value;
       let password = document.getElementById("password").value;
 
       var form_data = new FormData();
-      form_data.append("id", id);
+      form_data.append("email", email);
       form_data.append("password", password);
 
       ajaxRequest.onreadystatechange = function () {
@@ -20,9 +20,12 @@
           var response = JSON.parse(this.responseText);
 
           if (response.status == "failed") {
+            
             document.getElementById("login_form_err_msg").style.display = "block";
             document.getElementById("login_form_err_msg").innerHTML = "email or password is invalid";
+            document.getElementById("email").focus();
             return;
+
           } else {
 
             // Clear the error messages if any
@@ -30,12 +33,12 @@
             document.getElementById("login_form_err_msg").innerHTML = "";
 
             // Redirect to the forum home screen
-            window.location = "{{config.application.base_url}}forum";
+            window.location = "/";
           }
         }
       };
 
-      send_request(ajaxRequest, "POST", "{{config.application.base_url}}login", form_data, null);
+      send_request(ajaxRequest, "POST", "/login", form_data, null);
     }
     // End of login()
 
@@ -58,8 +61,8 @@
                 <form onsubmit="event.preventDefault();" id="login_form">
 
                   <div class="form-group mb-3">
-                    <label class="control-label" for="id">Email:</label>
-                    <input type="email" id="id" class="input-md form-control" value="s3828116@student.rmit.edu.au" required />
+                    <label class="control-label" for="email">Email:</label>
+                    <input type="email" id="email" class="input-md form-control" value="s3828116@student.rmit.edu.au" required />
                   </div>
 
                   <div class="form-group mb-3">
