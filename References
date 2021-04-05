@@ -28,3 +28,6 @@ express-session (2020). Available at: https://www.npmjs.com/package/express-sess
 [7]
 Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript
 Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript (2021). Available at: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html (Accessed: 4 April 2021).
+
+[8]
+Using IN clause in DynamoDB

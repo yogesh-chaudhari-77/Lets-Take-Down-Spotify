@@ -47,7 +47,7 @@ app.use(session({
     secret: 'This is my session secret key. How Creative am I',
     resave: false,
     saveUninitialized: true
-  }));
+}));
 
 // Setting view engine
 app.set('view engine', 'ejs');
@@ -58,6 +58,190 @@ app.use(authRoutes);
 
 app.get("/", (req, res) => {
     res.render("index");
+});
+
+app.get("/main", (req, res) => {
+    res.render("main");
+});
+
+
+app.post("/music/query", (req, res) => {
+
+    console.log(req.fields);
+
+    var title = req.fields.title;
+    var year = req.fields.year;
+    var artist = req.fields.artist;
+
+    var params = {
+        TableName: 'music',
+        ProjectionExpression: 'id, artist, img_url, web_url, title, #year',
+        FilterExpression: 'contains(artist, :a) or contains(title, :t) or contains(#year,:y)',
+        ExpressionAttributeValues: {
+            ':a': { S: artist },
+            ':t': { S: title },
+            ':y': { S: year }
+        },
+        ExpressionAttributeNames: {
+            "#year": "year"
+        },
+    };
+
+    dynamodb_client.scan(params, function (err, data) {
+
+        if (err) {
+            console.log("Error", err);
+        } else {
+            console.log("Success", data);
+            var music = [];
+            data.Items.forEach(function (element, index, array) {
+                music.push({
+                    "id": element.id.S,
+                    "year": element.year.S,
+                    "artist": element.artist.S,
+                    "title": element.title.S,
+                    "img_url": element.img_url.S
+                });
+            });
+
+            res.json({ "status": "success", "music": music });
+        }
+    });
+});
+
+app.post("/music/subscribe", (req, res) => {
+
+    console.log(req.fields);
+
+    var music_id = req.fields.music_id;
+    var email = req.session.email;
+
+    var params = {
+        TableName: 'music_subscription',
+        Item: {
+            'subscription_id': { S: uuidv4() },
+            'music_id': { S: music_id },
+            'email': { S: email },
+        }
+    };
+
+    // Call DynamoDB to add the item to the table
+    dynamodb_client.putItem(params, (err, data) => {
+        if (err) {
+            console.error("Error", err);
+            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
+        } else {
+            console.log(data);
+            res.json({ "status": "success" });
+        }
+    });
+
+});
+
+app.post("/music/unsubscribe", (req, res) => {
+
+    console.log(req.fields);
+
+    var subscription_id = req.fields.subscription_id;
+
+    var params = {
+        TableName: 'music_subscription',
+        Key: { 
+            "subscription_id" : {S : subscription_id}
+        }
+        // ConditionExpression: 'subscription_id = :s',
+        // ExpressionAttributeValues: {
+        //     ":s": { "S": subscription_id }
+        // }
+    };
+
+    // Call DynamoDB to add the item to the table
+    dynamodb_client.deleteItem(params, (err, data) => {
+        if (err) {
+            console.error("Error", err);
+            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
+        } else {
+            console.log("Delete Item Success", data);
+            res.json({ "status": "success" });
+        }
+    });
+
+});
+
+app.post("/music/subscribed", (req, res) => {
+
+    var email = req.session.email;
+
+    console.log("email", req.session.email);
+    console.log("username", req.session.username);
+
+    var params = {
+        TableName: 'music_subscription',
+        ProjectionExpression: 'subscription_id, music_id',
+        FilterExpression: 'contains(email, :e)',
+        ExpressionAttributeValues: {
+            ':e': { S: email }
+        }
+    };
+
+    dynamodb_client.scan(params, function (err, data) {
+
+        if (err) {
+            console.log("Error", err);
+        } else {
+
+            if(data.Items.length <= 0){
+                res.json({ "status": "success", "music": {}});
+                return;
+            }
+
+            console.log("Success", data);
+            var titleObject = {};
+            var music = {};
+
+            data.Items.forEach(function (element, index, array) {
+                var musicIdKey = ":titlevalue" + index;
+                titleObject[musicIdKey.toString()] = { "S": element.music_id.S };
+                music[element.music_id.S] = {
+                    "subscription_id": element.subscription_id.S
+                }
+            });
+
+            var params = {
+                TableName: 'music',
+                ProjectionExpression: 'id, title, artist, #year, img_url',
+                FilterExpression: "id IN (" + Object.keys(titleObject).toString() + ")",
+                ExpressionAttributeValues: titleObject,
+                ExpressionAttributeNames: {
+                    "#year": "year"
+                }
+            };
+
+            console.log("Object.keys(titleObject).toString()", Object.keys(titleObject).toString());
+            console.log("titleObject", titleObject);
+
+            dynamodb_client.scan(params, function (err, data) {
+
+                if (err) {
+                    console.log("Error", err);
+                } else {
+                    console.log("Second Query", data);
+
+                    data.Items.forEach(function (element, index, array) {
+                        music[element.id.S]["id"] = element.id.S;
+                        music[element.id.S]["title"] = element.title.S;
+                        music[element.id.S]["artist"] = element.artist.S;
+                        music[element.id.S]["year"] = element.year.S;
+                        music[element.id.S]["img_url"] = element.img_url.S;
+                    });
+
+                    res.json({ "status": "success", "music": music });
+
+                }
+            });
+        }
+    });
+
 });
 
 /**
@@ -178,20 +362,19 @@ app.get("/upload_images_to_s3", (req, res) => {
                 Body: fileContent
             };
 
-            
+
             s3_client.upload(params, function (err, data) {
                 if (err) {
                     throw err;
                 }
                 console.log('File uploaded successfully', data.Location);
-                res.send("File uploaded successfully. "+data.Location);
+                res.send("File uploaded successfully. " + data.Location);
             });
         }
     });
 
-    
-});
 
+});
 
 
 // 404 page 

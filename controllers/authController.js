@@ -139,6 +139,8 @@ const signup_post = (req, res) => {
  */
 const logout_get = (req, res) => {
 
+    req.session.reset();
+    
     req.session.destroy(function(err) {
         res.redirect("/");
     })

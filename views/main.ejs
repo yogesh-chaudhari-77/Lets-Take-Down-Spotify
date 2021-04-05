@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+
+    <style>
+        /* No scroll bar for messgaes area */
+        #subscribed_music_div::-webkit-scrollbar {
+          display: none;
+        }
+    </style>
+
+<!--Head tag goes here -->
+<%- include('./partials/head.ejs'); %>
+
+    <script>
+        $(document).ready(function(){
+            get_subscribed_music(); 
+        });
+    </script>
+    <script>
+        
+        function get_subscribed_music(){
+            let ajaxRequest = new ajaxFunction();
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                        if (response.music) {
+                            console.log(response.music);
+                            $("#query_results_div").attr("hidden", true);
+                            $("#query_result_list").html("");
+                            $("#subscribed_music_div").attr("hidden", false);
+
+                            var music_ids = Object.keys(response.music);
+                            for(var music_id of music_ids){
+                                var html_template = create_music_subscribed_card(response.music[music_id]);
+                                $("#subscribed_music_list").prepend(html_template);
+                            }
+
+                            if(music_ids.length == 0){
+                                $("#subscribed_music_list").html("<span class='text-muted mb-3' style='font-size:20px'>You have not subscribed to any music yet.</span>");
+                            }
+                        }
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/subscribed", null, null);
+        }
+
+        function subscribe_music(music_id){
+            let ajaxRequest = new ajaxFunction();
+
+            var form_data = new FormData();
+            form_data.append("music_id", music_id);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                        // Refresh the subscribed list
+                        get_subscribed_music();
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/subscribe", form_data, null);
+        }
+
+        function unsubscribe_music(subscription_id){
+
+            let ajaxRequest = new ajaxFunction();
+
+            var form_data = new FormData();
+            form_data.append("subscription_id", subscription_id);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                       $(this).parent().parent().fadeOut();
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/unsubscribe", form_data, null);
+        }
+        /**
+            User can query music using title, artist and year combination.
+            Returns the list of results matching search criteria.
+            endpoint: /forum
+        */
+        function query_music() {
+            let ajaxRequest = new ajaxFunction();
+            let title = document.getElementById("title").value;
+            let year = document.getElementById("year").value;
+            let artist = document.getElementById("artist").value;
+
+            var form_data = new FormData();
+            form_data.append("title", title);
+            form_data.append("year", year);
+            form_data.append("artist", artist);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        document.getElementById("music_query_form_err_msg").style.display = "block";
+                        document.getElementById("music_query_form_err_msg").innerHTML = "";
+                        return;
+                    } else {
+
+                        // Clear the error messages if any
+                        document.getElementById("music_query_form_err_msg").style.display = "none";
+                        document.getElementById("music_query_form_err_msg").innerHTML = "";
+
+                        if (response.music) {
+                            $("#query_results_div").attr("hidden", false);
+                            $("#subscribed_music_div").attr("hidden", true);
+                            $("#query_result_list").html("");
+
+                            for(var result of response.music){
+                                var html_template = create_music_query_card(result);
+                                $("#query_result_list").prepend(html_template);
+                            }
+
+                            if(response.music.length == 0){
+                                $("#query_result_list").html("<span class='text-muted mb-3' style='font-size:20px'>No result is retrieved. Please query again</span>");
+                            }
+                        }
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/query", form_data, null);
+        }
+        // end of query_music()
+
+        /**
+         * Clears the entire music query form
+         */
+        function clear_music_query_form() {
+
+            // Clear the error messages if any
+            document.getElementById("music_query_form_err_msg").style.display = "none";
+            document.getElementById("music_query_form_err_msg").innerHTML = "";
+
+            // Reseting form fields
+            document.getElementById("music_query_form").reset();
+        }
+
+        function new_query(){
+            clear_music_query_form();
+            $("#query_result_list").html("");
+            document.getElementById("title").focus();
+        }
+
+        function return_to_subscribed_music(){
+            clear_music_query_form();
+            $("#query_result_list").html("");
+            
+            get_subscribed_music();
+
+            $("#query_results_div").attr("hidden", true);
+            $("#subscribed_music_div").attr("hidden", false);
+        }
+
+        // Generates a html template for query result and returns it.
+        function create_music_query_card(music) {
+
+            var default_img = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22574%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20574%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17812173647%20text%20%7B%20fill%3Argba(255%2C255%2C255%2C.75)%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A29pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17812173647%22%3E%3Crect%20width%3D%22574%22%20height%3D%22180%22%20fill%3D%22%23777%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22212.8125%22%20y%3D%22103.00312500000001%22%3E574x180%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E";
+            var image_url = (music.img_url == "" || music.img_url == null) ? default_img : music.img_url;
+            var query_card = "<div class='card bg-dark text-white mb-3'>" +
+                "<img class='card-img' src='"+image_url+"' style='max-height: 200px;background-size: cover;opacity: 0.4;' alt='Card image'>" +
+                "<div class='card-img-overlay'>" +
+                "   <h5 class='card-title'>" + music.title+ "</h5>" +
+                "   <p class='card-text'>Artist: " + music.artist + " Year: "+music.year+"</p>" +
+                "   <a id='subscribe_"+music.id+"' onclick='subscribe_music(\""+music.id+"\")' class='btn btn-outline-light'><i class='fa fa-plus' aria-hidden='true'></i> Subsribe</a>" +
+                "</div>" +
+                "</div>";
+
+            return query_card;
+        }
+        // end of create_post_card()
+
+        // Generates a html template for subscribed music and returns it
+        function create_music_subscribed_card(music) {
+            var default_img = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22574%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20574%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17812173647%20text%20%7B%20fill%3Argba(255%2C255%2C255%2C.75)%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A29pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17812173647%22%3E%3Crect%20width%3D%22574%22%20height%3D%22180%22%20fill%3D%22%23777%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22212.8125%22%20y%3D%22103.00312500000001%22%3E574x180%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E";
+            var image_url = (music.img_url == "" || music.img_url == null) ? default_img : music.img_url;
+            var music_card = "<div class='card bg-dark text-white mb-3'>" +
+                "<img class='card-img' src='"+image_url+"' style='max-height: 200px;background-size: cover;opacity: 0.4;' alt='Card image'>" +
+                "<div class='card-img-overlay'>" +
+                "   <h5 class='card-title'>" + music.title+ "</h5>" +
+                "   <p class='card-text'>Artist: " + music.artist + " Year: "+music.year+"</p>" +
+                "   <a onclick='unsubscribe_music(\""+music.subscription_id+"\")' class='btn btn-outline-light'><i class='fa fa-minus-circle'></i> Remove</a>" +
+                "</div>" +
+                "</div>";
+
+            return music_card;
+        }
+    // end of create_post_card()
+    </script>
+
+
+
+    <body>
+        <!-- Header goes here -->
+        <%- include('./partials/navbar.ejs'); %>
+
+            <!-- Actual body goes here -->
+
+            <div class="container mt-3">
+                <div class="row">
+                    <!-- Start of user area-->
+                    <div class="col-md-3" id="user_area">
+                        <div class="card shadow p-3 mb-5 bg-white rounded">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fa fa-user" aria-hidden="true"></i> User Area</h5>
+                                <div class="text-center">
+                                    <img src="" height="120px" width="120px" class='img img-responsive rounded-circle'>
+                                </div>
+                            </div>
+                            <h5 class="card-title text-center">
+                                <a href="" style="color: inherit;text-decoration: none;">User Name</a>
+                            </h5>
+                        </div>
+                    </div>
+                    <!-- End of user area -->
+
+                    <div class="col-md-9">
+
+                        <!-- Message posting area starts here -->
+                        <div class="row">
+                            <div class="col-md-5">
+
+                                <div class="card shadow p-3 mb-5 bg-white rounded">
+                                    <div class="card-body">
+                                        <h5 class="card-title"><i class="fa fa-search" aria-hidden="true"></i> Query Area</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">Find music that moves you</h6>
+
+                                        <form onsubmit="event.preventDefault();" id="music_query_form">
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Title:</label>
+                                                <input type="text" id="title" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Year:</label>
+                                                <input type="text" id="year" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Artist:</label>
+                                                <input type="text" id="artist" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <span class="text-danger" id="music_query_form_err_msg" hidden></span>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <button class="btn btn-outline-dark btn-md form-control"
+                                                    onclick="query_music()">Query</button>
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7" id="subscribed_music_div">
+                                <h5 class="card-title"><i class="fa fa-music" aria-hidden="true"></i> Subscribed Music</h5>
+                                <hr />
+                                <div id="subscribed_music_list">
+                                </div>
+
+                                <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> Find New Music</a>
+                            </div>
+
+                            <div class="col-md-7" id="query_results_div" hidden>
+                                <h5 class="card-title"><i class="fa fa-list" aria-hidden="true"></i> Query Results</h5>
+                                <hr />
+                                <div id="query_result_list">
+                                </div>
+                                
+                                <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> New Search</a>
+                                <a id="" onclick="return_to_subscribed_music();" class="btn btn-md btn-outline-primary"><i class="fa fa-chevron-circle-left" aria-hidden="true"></i> Return to Subscribed Music</a>
+                            </div>
+                        </div>
+                        <!-- Message posting area ends here -->
+                    </div>
+                </div>
+            </div>
+            <!-- Actual body ends here-->
+
+            <!-- Footer goes here -->
+            <%- include('./partials/footer.ejs'); %>
+    </body>
+
+</html>
