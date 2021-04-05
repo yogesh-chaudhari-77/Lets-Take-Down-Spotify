@@ -1,5 +1,8 @@
 const express = require('express');
 
+// Routes Require
+const authRoutes = require("./routes/authRoutes");
+
 // System requires
 const os = require("os");
 const path = require('path');
@@ -51,6 +54,7 @@ app.set('view engine', 'ejs');
 
 // Registering other routes with the application - Similar to blueprints in python
 
+app.use(authRoutes);
 
 app.get("/", (req, res) => {
     res.render("index");
@@ -189,125 +193,6 @@ app.get("/upload_images_to_s3", (req, res) => {
 });
 
 
-// User auth routes
-app.get("/login", (req, res) => {
-    res.render("auth/login");
-});
-
-/**
- * [7]
- */
-app.post("/login", (req, res) => {
-    
-    const email = req.fields.email;
-    const password = req.fields.password;
-
-    var params = {    
-        TableName: 'login',
-        ProjectionExpression: 'email, password, username',           // Equivalent to select clause
-        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
-
-        
-        ExpressionAttributeValues: {
-          ':e': {S: email}
-        }
-      };
-
-      dynamodb_client.query(params, (err, data) => {
-        
-        // Validating matching records count
-        if(data != null && data.Items.length == 1){
-            
-            const record = data.Items[0];
-
-            // Validating Password
-            if(password == record.password.S){
-                req.session.email = record.email.S;
-                req.session.username = record.username.S;
-
-                res.json({"status" : "success"});
-            }else{
-                res.json({"status" : "failed"});
-            }
-            
-        }else{
-            console.log(err);
-            res.json({"status" : "failed"});
-        }
-
-      });
-});
-
-
-app.get("/signup", (req, res) => {
-    res.render("auth/signup");
-});
-
-app.post("/signup", (req, res) => {
-    
-    const email = req.fields.email;
-    const username = req.fields.username;
-    const password = req.fields.password;
-
-    var params = {    
-        TableName: 'login',
-        ProjectionExpression: 'email',           // Equivalent to select clause
-        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
-
-        
-        ExpressionAttributeValues: {
-          ':e': {S: email}
-        }
-      };
-
-      dynamodb_client.query(params, (err, data) => {
-        
-        console.log("data --> ", data);
-        // There is no record with given email
-        if(data.Items.length == 0){
-            
-            var create_user_login = () => {
-
-                var params = {
-                    TableName: 'login',
-                    Item: {
-                        'email': { S: email },
-                        'password': { S: password },
-                        'username': { S: username }
-                    }
-                };
-
-                // Call DynamoDB to add the item to the table
-                dynamodb_client.putItem(params, (err, data) => {
-                    if (err) {
-                        console.error("Error", err);
-                        res.json({"status": "failed", "err_msg" : "Unknown error occured. Please try again."});
-                    } else {
-                        res.json({"status": "success"});
-                    }
-                });
-            }
-
-            create_user_login();
-
-        }else{
-            console.log(err);
-            res.json({"status" : "failed", "err_msg" : "The email already exists."});
-        }
-
-      });
-
-});
-
-/**
- * Logout Function - Destroys the session and then redirects to the home page.
- */
-app.get("/logout", (req, res) => {
-    
-    req.session.destroy(function(err) {
-        res.redirect("/");
-    })
-});
 
 // 404 page 
 app.use((req, res) => {
