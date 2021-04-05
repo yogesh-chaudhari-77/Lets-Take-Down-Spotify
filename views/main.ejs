@@ -34,6 +34,7 @@
                             console.log(response.music);
                             $("#query_results_div").attr("hidden", true);
                             $("#query_result_list").html("");
+                            $("#subscribed_music_list").html("");
                             $("#subscribed_music_div").attr("hidden", false);
 
                             var music_ids = Object.keys(response.music);

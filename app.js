@@ -2,6 +2,7 @@ const express = require('express');
 
 // Routes Require
 const authRoutes = require("./routes/authRoutes");
+const subscriptionRoutes = require("./routes/subscriptionRoutes");
 
 // System requires
 const os = require("os");
@@ -55,6 +56,7 @@ app.set('view engine', 'ejs');
 // Registering other routes with the application - Similar to blueprints in python
 
 app.use(authRoutes);
+app.use(subscriptionRoutes);
 
 app.get("/", (req, res) => {
     res.render("index");
@@ -109,140 +111,6 @@ app.post("/music/query", (req, res) => {
     });
 });
 
-app.post("/music/subscribe", (req, res) => {
-
-    console.log(req.fields);
-
-    var music_id = req.fields.music_id;
-    var email = req.session.email;
-
-    var params = {
-        TableName: 'music_subscription',
-        Item: {
-            'subscription_id': { S: uuidv4() },
-            'music_id': { S: music_id },
-            'email': { S: email },
-        }
-    };
-
-    // Call DynamoDB to add the item to the table
-    dynamodb_client.putItem(params, (err, data) => {
-        if (err) {
-            console.error("Error", err);
-            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
-        } else {
-            console.log(data);
-            res.json({ "status": "success" });
-        }
-    });
-
-});
-
-app.post("/music/unsubscribe", (req, res) => {
-
-    console.log(req.fields);
-
-    var subscription_id = req.fields.subscription_id;
-
-    var params = {
-        TableName: 'music_subscription',
-        Key: { 
-            "subscription_id" : {S : subscription_id}
-        }
-        // ConditionExpression: 'subscription_id = :s',
-        // ExpressionAttributeValues: {
-        //     ":s": { "S": subscription_id }
-        // }
-    };
-
-    // Call DynamoDB to add the item to the table
-    dynamodb_client.deleteItem(params, (err, data) => {
-        if (err) {
-            console.error("Error", err);
-            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
-        } else {
-            console.log("Delete Item Success", data);
-            res.json({ "status": "success" });
-        }
-    });
-
-});
-
-app.post("/music/subscribed", (req, res) => {
-
-    var email = req.session.email;
-
-    console.log("email", req.session.email);
-    console.log("username", req.session.username);
-
-    var params = {
-        TableName: 'music_subscription',
-        ProjectionExpression: 'subscription_id, music_id',
-        FilterExpression: 'contains(email, :e)',
-        ExpressionAttributeValues: {
-            ':e': { S: email }
-        }
-    };
-
-    dynamodb_client.scan(params, function (err, data) {
-
-        if (err) {
-            console.log("Error", err);
-        } else {
-
-            if(data.Items.length <= 0){
-                res.json({ "status": "success", "music": {}});
-                return;
-            }
-
-            console.log("Success", data);
-            var titleObject = {};
-            var music = {};
-
-            data.Items.forEach(function (element, index, array) {
-                var musicIdKey = ":titlevalue" + index;
-                titleObject[musicIdKey.toString()] = { "S": element.music_id.S };
-                music[element.music_id.S] = {
-                    "subscription_id": element.subscription_id.S
-                }
-            });
-
-            var params = {
-                TableName: 'music',
-                ProjectionExpression: 'id, title, artist, #year, img_url',
-                FilterExpression: "id IN (" + Object.keys(titleObject).toString() + ")",
-                ExpressionAttributeValues: titleObject,
-                ExpressionAttributeNames: {
-                    "#year": "year"
-                }
-            };
-
-            console.log("Object.keys(titleObject).toString()", Object.keys(titleObject).toString());
-            console.log("titleObject", titleObject);
-
-            dynamodb_client.scan(params, function (err, data) {
-
-                if (err) {
-                    console.log("Error", err);
-                } else {
-                    console.log("Second Query", data);
-
-                    data.Items.forEach(function (element, index, array) {
-                        music[element.id.S]["id"] = element.id.S;
-                        music[element.id.S]["title"] = element.title.S;
-                        music[element.id.S]["artist"] = element.artist.S;
-                        music[element.id.S]["year"] = element.year.S;
-                        music[element.id.S]["img_url"] = element.img_url.S;
-                    });
-
-                    res.json({ "status": "success", "music": music });
-
-                }
-            });
-        }
-    });
-
-});
 
 /**
  * Creates a music table programatically
