@@ -4,6 +4,89 @@
 <!--Head tag goes here -->
 <%- include('./partials/head.ejs'); %>
 
+  <script>
+
+    function download_images() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 1 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/download_images_from_url", null, null);
+    }
+
+    function upload_images() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 2 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/upload_images_to_s3", null, null);
+    }
+
+    function create_table() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 3 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/create_music_table", null, null);
+    }
+
+    function populate_database() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 4 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/populate_music_table", null, null);
+    }
+  </script>
+
   <body>
     <!-- Header goes here -->
     <%- include('./partials/navbar.ejs'); %>
@@ -36,13 +119,28 @@
               </ul>
             </div>
           </div>
-          <div class="col-md-8">
+        </div>
+
+        <div class="text-center mt-5">
+          <h2 class="text-primary">Basic Setup</h1>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 text-center">
+
+            <button class="btn btn-outline-primary btn-sm" onclick="download_images()">Download images</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="upload_images()">Upload images</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="create_table()">Create Table</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="populate_database()">Populate Database</button>
+
 
           </div>
         </div>
+
       </div>
       <!-- Actual body ends here-->
 
+      <br /><br /><br />
       <!-- Footer goes here -->
       <%- include('./partials/footer.ejs'); %>
   </body>

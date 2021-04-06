@@ -19,14 +19,14 @@ var dynamodb_client = new AWS.DynamoDB();
     Renders the login page
 */
 const login_get = (req, res) => {
-    res.render("auth/login");
+    res.render("auth/login", {session : req.session});
 }
 
 /*
     Renders the signup page
 */
 const signup_get = (req, res) => {
-    res.render("auth/signup");
+    res.render("auth/signup", {session : req.session});
 }
 
 /*
@@ -139,8 +139,6 @@ const signup_post = (req, res) => {
  */
 const logout_get = (req, res) => {
 
-    req.session.reset();
-    
     req.session.destroy(function(err) {
         res.redirect("/");
     })

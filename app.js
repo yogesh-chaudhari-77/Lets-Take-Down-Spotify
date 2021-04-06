@@ -14,13 +14,16 @@ const http = require('http');
 const formidableMiddleware = require('express-formidable');
 const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
-var session = require('express-session');
+const session = require('express-session');
+var downloadFileSync = require('download-file-sync');
 
 //AWS Requires
 var AWS = require("aws-sdk");
 
 // Config Requires
 var aws_config = require("./config/aws_admin_credentials_for_programmatic_access.js");
+const { resolve } = require('path');
+const { CallTracker, rejects } = require('assert');
 
 AWS.config.update({
     region: "ap-southeast-2",
@@ -59,11 +62,11 @@ app.use(authRoutes);
 app.use(subscriptionRoutes);
 
 app.get("/", (req, res) => {
-    res.render("index");
+    res.render("index", {session : req.session});
 });
 
 app.get("/main", (req, res) => {
-    res.render("main");
+    res.render("main", {session : req.session});
 });
 
 
@@ -117,7 +120,7 @@ app.post("/music/query", (req, res) => {
  * Id is the primaru key. There is no sorting key
  * Doubts : Documentation says that there is no need to provide other attributes beforehand it being schemaless. Is my understanding correct?
  */
-app.get("create_music_table", (req, res) => {
+app.get("/create_music_table", (req, res) => {
     var params = {
         TableName: "music",
         KeySchema: [
@@ -148,8 +151,21 @@ app.get("create_music_table", (req, res) => {
         }
     });
 
+    res.send({status : "success"});
+
 });
 // End of create music table
+
+
+app.get("/do_all", (req, res) => {
+    var music_objects = JSON.parse(fs.readFileSync('a2.json', 'utf8'));
+
+    for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
+
+
+
+    }
+});
 
 /**
  * Loads the sample data from the a2.json file into the DynamoDB
@@ -161,6 +177,10 @@ app.get("/populate_music_table", (req, res) => {
 
     for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
 
+        const img_url = music_objects["songs"][i].img_url;
+        const url_tokens = img_url.split("/");
+        const object_name = url_tokens[(url_tokens.length - 1)];
+
         // Forming a item for the put request
         const params = {
             TableName: "music",
@@ -170,7 +190,7 @@ app.get("/populate_music_table", (req, res) => {
                 artist: { S: "" + music_objects["songs"][i].artist },
                 year: { S: "" + music_objects["songs"][i].year },
                 web_url: { S: "" + music_objects["songs"][i].web_url },
-                img_url: { S: "" + music_objects["songs"][i].img_url }
+                img_url: { S: "" + "https://"+aws_config.s3_config.bucket_name+".s3-"+aws_config.s3_config.bucket_region+".amazonaws.com/"+object_name }
             }
         };
 
@@ -184,7 +204,7 @@ app.get("/populate_music_table", (req, res) => {
         });
     }
 
-    res.send("<pre>Database loaded</pre>");
+    res.send({status : "success"});
 });
 // End of populate_music_table
 
@@ -197,17 +217,19 @@ app.get("/download_images_from_url", (req, res) => {
     var music_objects = JSON.parse(fs.readFileSync('a2.json', 'utf8'));
 
     for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
-
+        console.log("Starting Download =", i);
         const img_url = music_objects["songs"][i].img_url;
         const url_tokens = img_url.split("/");
         const download_file_ref = fs.createWriteStream("public/downloaded_images/" + url_tokens[(url_tokens.length - 1)]);      // Extract the file name from target url
 
         http.get(img_url, function (response) {
             response.pipe(download_file_ref);
+            console.log("Downloaded =", i);
         });
     }
 
-    res.send("All Images have been downloaded successfully.");
+    res.send({status : "success"});
+
 });
 
 
@@ -219,26 +241,34 @@ app.get("/upload_images_to_s3", (req, res) => {
 
     fs.readdir("public/downloaded_images/", function (err, files) {
 
-        for (let f = 0; f < files.length; f++) {
+        try { 
+            for (let f = 0; f < files.length; f++) {
 
-            const fileContent = fs.readFileSync("public/downloaded_images/" + files[f]);
+                const fileContent = fs.readFileSync("public/downloaded_images/" + files[f]);
+    
+                // Setting up S3 upload parameters
+                const params = {
+                    Bucket: aws_config.s3_config.bucket_name,
+                    Key: files[f],                             // File name you want to save as in S3
+                    Body: fileContent,
+                    ACL:'public-read'                           // Make object public
+                };
+    
+    
+                s3_client.upload(params, function (err, data) {
+                    if (err) {
+                        throw err;
+                    }
+                    console.log('File uploaded successfully', data.Location);
+                });
+            }
+    
+            res.send({status : "success"});
 
-            // Setting up S3 upload parameters
-            const params = {
-                Bucket: aws_config.s3_config.bucket_name,
-                Key: files[f],                             // File name you want to save as in S3
-                Body: fileContent
-            };
-
-
-            s3_client.upload(params, function (err, data) {
-                if (err) {
-                    throw err;
-                }
-                console.log('File uploaded successfully', data.Location);
-                res.send("File uploaded successfully. " + data.Location);
-            });
+        }catch(e){
+            res.send({status : "failed", "error" : String(e)});
         }
+        
     });
 
 

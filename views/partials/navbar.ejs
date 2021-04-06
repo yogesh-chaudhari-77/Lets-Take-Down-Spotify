@@ -20,12 +20,14 @@
               
             </ul>
     
-            <a class="btn btn-outline-dark" aria-current="page" href="/login"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>
-            &nbsp;
-            <a class="btn btn-outline-dark" aria-current="page" href="/signup"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>
-    
-            <a href="/logout" class="btn btn-outline-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
-    
+            <% if ( session != null && session != undefined && session.username != undefined && session.username != null) { %>
+              <a href="/logout" class="btn btn-outline-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
+            <% } %>
+            <% if ( session != null && session != undefined && (session.username == undefined || session.username == null ) ) { %>
+              <a class="btn btn-outline-dark" aria-current="page" href="/login"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>
+                &nbsp;
+              <a class="btn btn-outline-dark" aria-current="page" href="/signup"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>
+            <% } %>
           </div>
         </div>
       </nav>
