@@ -69,7 +69,6 @@ app.get("/main", (req, res) => {
     res.render("main", {session : req.session});
 });
 
-
 app.post("/music/query", (req, res) => {
 
     console.log(req.fields);
