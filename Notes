@@ -1,3 +1,11 @@
+cd ~
+cd /mnt/c/temp
+
+sudo apt-get update
+curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+
 Install Express
 npm install express
 

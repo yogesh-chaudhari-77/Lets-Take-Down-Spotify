@@ -1,3 +1,4 @@
 node_modules
 config/aws_admin_credentials_for_programmatic_access.csv
 config/aws_admin_credentials_for_programmatic_access.js
+config/cloud_assignment_2_ec2_key_pair.pem

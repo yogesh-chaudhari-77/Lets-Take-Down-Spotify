@@ -78,7 +78,7 @@
             send_request(ajaxRequest, "POST", "/music/subscribe", form_data, null);
         }
 
-        function unsubscribe_music(subscription_id){
+        function unsubscribe_music(el, subscription_id){
 
             let ajaxRequest = new ajaxFunction();
 
@@ -94,7 +94,7 @@
                     if (response.status == "failed") {
                         return;
                     } else {
-                       $(this).parent().parent().fadeOut();
+                       $(el).parent().parent().fadeOut();
                     }
                 }
             };
@@ -210,7 +210,7 @@
                 "<div class='card-img-overlay'>" +
                 "   <h5 class='card-title'>" + music.title+ "</h5>" +
                 "   <p class='card-text'>Artist: " + music.artist + " Year: "+music.year+"</p>" +
-                "   <a onclick='unsubscribe_music(\""+music.subscription_id+"\")' class='btn btn-outline-light'><i class='fa fa-minus-circle'></i> Remove</a>" +
+                "   <a onclick='unsubscribe_music(this, \""+music.subscription_id+"\")' class='btn btn-outline-light'><i class='fa fa-minus-circle'></i> Remove</a>" +
                 "</div>" +
                 "</div>";
 
