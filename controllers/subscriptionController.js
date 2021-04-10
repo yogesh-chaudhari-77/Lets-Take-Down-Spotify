@@ -17,6 +17,11 @@ AWS.config.update({
 var dynamodb_client = new AWS.DynamoDB();
 
 
+/**
+ * User can subscribe to the music
+ * @param {*} req - music_id to subscribe to, email of the user 
+ * @param {*} res 
+ */
 const subscribe_post = (req, res) => {
     console.log(req.fields);
 
@@ -45,6 +50,11 @@ const subscribe_post = (req, res) => {
 }
 
 
+/**
+ * User can unsubscribe the music, he has subscribed already.
+ * @param {*} req - Subscription ID
+ * @param {*} res - Json status response - success or failed
+ */
 const unsubscribe_post = (req, res) => {
     
     console.log(req.fields);
@@ -56,10 +66,6 @@ const unsubscribe_post = (req, res) => {
         Key: { 
             "subscription_id" : {S : subscription_id}
         }
-        // ConditionExpression: 'subscription_id = :s',
-        // ExpressionAttributeValues: {
-        //     ":s": { "S": subscription_id }
-        // }
     };
 
     // Call DynamoDB to add the item to the table
@@ -75,6 +81,11 @@ const unsubscribe_post = (req, res) => {
 }
 
 
+/**
+ * Retrives all the subscribed posts of this user
+ * @param {*} req - email address of the user
+ * @param {*} res - List of subcribed music containing title, year, artitst, image of the album
+ */
 const subscribed_post = (req, res) => {
     var email = req.session.email;
 

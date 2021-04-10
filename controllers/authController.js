@@ -40,8 +40,8 @@ const login_post = (req, res) => {
 
     var params = {    
         TableName: 'login',
-        ProjectionExpression: 'email, password, username',           // Equivalent to select clause
-        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
+        ProjectionExpression: 'email, password, username',    // Equivalent to select clause
+        KeyConditionExpression: 'email = :e',                 // Equivalent to where clause
 
         
         ExpressionAttributeValues: {
@@ -75,6 +75,7 @@ const login_post = (req, res) => {
 }
 
 /*
+    [7]
     Accepts user credentials and create a new account.
     It also create a login token which will be sent back to the client
 */
@@ -84,12 +85,11 @@ const signup_post = (req, res) => {
     const username = req.fields.username;
     const password = req.fields.password;
 
+    // [7] - Querying and Scanning DynamoDB table
     var params = {    
         TableName: 'login',
         ProjectionExpression: 'email',           // Equivalent to select clause
-        KeyConditionExpression: 'email = :e',     // Equivalent to where clause
-
-        
+        KeyConditionExpression: 'email = :e',    // Equivalent to where clause
         ExpressionAttributeValues: {
           ':e': {S: email}
         }
@@ -98,6 +98,7 @@ const signup_post = (req, res) => {
       dynamodb_client.query(params, (err, data) => {
         
         console.log("data --> ", data);
+        
         // There is no record with given email
         if(data.Items.length == 0){
             

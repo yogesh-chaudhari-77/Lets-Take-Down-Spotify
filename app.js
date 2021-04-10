@@ -118,6 +118,7 @@ app.post("/music/query", (req, res) => {
  * Creates a music table programatically
  * Id is the primaru key. There is no sorting key
  * Doubts : Documentation says that there is no need to provide other attributes beforehand it being schemaless. Is my understanding correct?
+ * [9]
  */
 app.get("/create_music_table", (req, res) => {
     var params = {
@@ -137,8 +138,8 @@ app.get("/create_music_table", (req, res) => {
             // { AttributeName: "image_url", AttributeType: "S" }
         ],
         ProvisionedThroughput: {
-            ReadCapacityUnits: 10,
-            WriteCapacityUnits: 10
+            ReadCapacityUnits: 1,
+            WriteCapacityUnits: 1
         }
     };
 
@@ -156,19 +157,10 @@ app.get("/create_music_table", (req, res) => {
 // End of create music table
 
 
-app.get("/do_all", (req, res) => {
-    var music_objects = JSON.parse(fs.readFileSync('a2.json', 'utf8'));
-
-    for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
-
-
-
-    }
-});
-
 /**
  * Loads the sample data from the a2.json file into the DynamoDB
  * Need to improvise and change pitItem request from callback to sync
+ * [10]
  */
 app.get("/populate_music_table", (req, res) => {
 
@@ -180,7 +172,7 @@ app.get("/populate_music_table", (req, res) => {
         const url_tokens = img_url.split("/");
         const object_name = url_tokens[(url_tokens.length - 1)];
 
-        // Forming a item for the put request
+        // [10] Forming a item for the put request
         const params = {
             TableName: "music",
             Item: {
@@ -208,22 +200,21 @@ app.get("/populate_music_table", (req, res) => {
 // End of populate_music_table
 
 /**
- * [3]
- * This function downloads images from the img_url attribute and saves it locally.
+ * [3] This function downloads images from the img_url attribute and saves it locally.
  */
 app.get("/download_images_from_url", (req, res) => {
 
     var music_objects = JSON.parse(fs.readFileSync('a2.json', 'utf8'));
 
     for (let i = 0, music_objetcts_len = music_objects["songs"].length; i < music_objetcts_len; i++) {
-        console.log("Starting Download =", i);
+
         const img_url = music_objects["songs"][i].img_url;
         const url_tokens = img_url.split("/");
+        // [3] 
         const download_file_ref = fs.createWriteStream("public/downloaded_images/" + url_tokens[(url_tokens.length - 1)]);      // Extract the file name from target url
 
         http.get(img_url, function (response) {
             response.pipe(download_file_ref);
-            console.log("Downloaded =", i);
         });
     }
 
@@ -245,7 +236,7 @@ app.get("/upload_images_to_s3", (req, res) => {
 
                 const fileContent = fs.readFileSync("public/downloaded_images/" + files[f]);
     
-                // Setting up S3 upload parameters
+                // [4] [5] Setting up S3 upload parameters
                 const params = {
                     Bucket: aws_config.s3_config.bucket_name,
                     Key: files[f],                             // File name you want to save as in S3

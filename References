@@ -31,3 +31,10 @@ Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript (2021). Availabl
 
 [8]
 Using IN clause in DynamoDB
+
+
+[9] - Creating and Using Tables in DynamoDB - AWS SDK for JavaScript
+Creating and Using Tables in DynamoDB - AWS SDK for JavaScript (2021). Available at: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-examples-using-tables.html (Accessed: 10 April 2021).
+
+[10] - Reading and Writing A Single Item in DynamoDB - AWS SDK for JavaScript
+Reading and Writing A Single Item in DynamoDB - AWS SDK for JavaScript (2021). Available at: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-table-read-write.html (Accessed: 10 April 2021).
