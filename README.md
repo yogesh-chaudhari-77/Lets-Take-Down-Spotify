@@ -72,7 +72,7 @@ If there is any matching music records, user can then subscribe to it as well un
   node app
   ```
   
-  #Images
+# Images
 * Landing Page
 ![Landing page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/1.png)
 
@@ -83,10 +83,10 @@ If there is any matching music records, user can then subscribe to it as well un
 ![Registration Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/3.png)
 
 * User Main Page (Showing Subscribed Music)
-![Forum Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/4.png)
+![Main Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/4.png)
 
 * User Query Results
-![User Area Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/5.png)
+![User Query Results](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/5.png)
 
 
 # Resources
