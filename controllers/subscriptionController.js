@@ -113,12 +113,13 @@ const subscribed_post = (req, res) => {
             }
 
             console.log("Success", data);
-            var titleObject = {};
+            var music_id_in_obj = {};
             var music = {};
 
-            data.Items.forEach(function (element, index, array) {
+            // [8]
+            data.Items.forEach(function (element, index) {
                 var musicIdKey = ":titlevalue" + index;
-                titleObject[musicIdKey.toString()] = { "S": element.music_id.S };
+                music_id_in_obj[musicIdKey.toString()] = { "S": element.music_id.S };
                 music[element.music_id.S] = {
                     "subscription_id": element.subscription_id.S
                 }
@@ -127,15 +128,15 @@ const subscribed_post = (req, res) => {
             var params = {
                 TableName: 'music',
                 ProjectionExpression: 'id, title, artist, #year, img_url',
-                FilterExpression: "id IN (" + Object.keys(titleObject).toString() + ")",
-                ExpressionAttributeValues: titleObject,
+                FilterExpression: "id IN (" + Object.keys(music_id_in_obj).toString() + ")",
+                ExpressionAttributeValues: music_id_in_obj,
                 ExpressionAttributeNames: {
                     "#year": "year"
                 }
             };
 
-            console.log("Object.keys(titleObject).toString()", Object.keys(titleObject).toString());
-            console.log("titleObject", titleObject);
+            console.log("Object.keys(titleObject).toString()", Object.keys(music_id_in_obj).toString());
+            console.log("titleObject", music_id_in_obj);
 
             dynamodb_client.scan(params, function (err, data) {
 
