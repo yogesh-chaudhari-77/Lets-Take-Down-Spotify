@@ -71,3 +71,46 @@ If there is any matching music records, user can then subscribe to it as well un
   ```
   node app
   ```
+  
+  #Images
+* Landing Page
+![Landing page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/1.png)
+
+* Login Page
+![Login Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/2.png)
+
+* Registration Page
+![Registration Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/3.png)
+
+* User Main Page (Showing Subscribed Music)
+![Forum Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/4.png)
+
+* User Query Results
+![User Area Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/5.png)
+
+
+# Resources
+[1] "Getting started in Node.js - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html. [Accessed: 10- Apr- 2021].
+
+[2] "uuid", npm, 2021. [Online]. Available: https://www.npmjs.com/package/uuid. [Accessed: 10- Apr- 2021].
+
+[3] H. libraries)?, M. Tilley and V. Yuan, "How to download a file with Node.js (without using third-party libraries)?", Stack Overflow, 2021. [Online]. Available: https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries. [Accessed: 10- Apr- 2021].
+
+[4] "Creating and using Amazon S3 buckets - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/s3-example-creating-buckets.html. [Accessed: 10- Apr- 2021].
+
+[5] "Uploading Files to AWS S3 with Node.js", Stack Abuse, 2021. [Online]. Available: https://stackabuse.com/uploading-files-to-aws-s3-with-node-js/. [Accessed: 10- Apr- 2021].
+
+[6] "express-session", npm, 2021. [Online]. Available: https://www.npmjs.com/package/express-session. [Accessed: 10- Apr- 2021].
+
+[7] "Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html. [Accessed: 10- Apr- 2021].
+
+[8]
+Using IN clause in DynamoDB
+
+[9] "Creating and Using Tables in DynamoDB - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-examples-using-tables.html. [Accessed: 10- Apr- 2021].
+
+[10] "Reading and Writing A Single Item in DynamoDB - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-table-read-write.html. [Accessed: 10- Apr- 2021].
+
+[11] a. Mark Otto, "Navbar", Getbootstrap.com, 2021. [Online]. Available: https://getbootstrap.com/docs/5.0/components/navbar/. [Accessed: 10- Apr- 2021].
+
+[12] a. Mark Otto, "Cards", Getbootstrap.com, 2021. [Online]. Available: https://getbootstrap.com/docs/5.0/components/card/. [Accessed: 10- Apr- 2021].
