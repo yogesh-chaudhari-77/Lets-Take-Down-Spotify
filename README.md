@@ -74,19 +74,19 @@ If there is any matching music records, user can then subscribe to it as well un
   
 # Images
 * Landing Page
-![Landing page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/1.png)
+![Landing page](screenshots/1.png)
 
 * Login Page
-![Login Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/2.png)
+![Login Page](screenshots/2.png)
 
 * Registration Page
-![Registration Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/3.png)
+![Registration Page](screenshots/3.png)
 
 * User Main Page (Showing Subscribed Music)
-![Main Page](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/4.png)
+![Main Page](screenshots/4.png)
 
 * User Query Results
-![User Query Results](https://github.com/yogesh-chaudhari-77/Lets-Take-Down-Spotify/tree/master/screenshots/5.png)
+![User Query Results](screenshots/5.png)
 
 
 # Resources
