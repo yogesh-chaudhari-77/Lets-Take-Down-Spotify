@@ -1,6 +1,0 @@
-Head
-Mark Otto, A. B. C. Mark Otto, a. (2021) Introduction, Getbootstrap.com. Available at: https://getbootstrap.com/docs/5.0/getting-started/introduction/ (Accessed: 1 April 2021).
-
-Navbar
-Mark Otto, A. B. C. Mark Otto, a. (2021) Navbar, Getbootstrap.com. Available at: https://getbootstrap.com/docs/5.0/components/navbar/ (Accessed: 1 April 2021).
-

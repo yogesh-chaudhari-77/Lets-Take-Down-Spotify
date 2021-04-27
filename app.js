@@ -66,6 +66,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/main", (req, res) => {
+    
+    if(req.session.email == undefined){
+        res.redirect("/login");
+    }
+
     res.render("main", {session : req.session});
 });
 
@@ -80,7 +85,7 @@ app.post("/music/query", (req, res) => {
     var params = {
         TableName: 'music',
         ProjectionExpression: 'id, artist, img_url, web_url, title, #year',
-        FilterExpression: 'contains(artist, :a) or contains(title, :t) or contains(#year,:y)',
+        FilterExpression: 'contains(artist, :a) and contains(title, :t) and contains(#year,:y)',
         ExpressionAttributeValues: {
             ':a': { S: artist },
             ':t': { S: title },
@@ -267,7 +272,7 @@ app.get("/upload_images_to_s3", (req, res) => {
 
 // 404 page 
 app.use((req, res) => {
-    res.render("pages/404.ejs");
+    res.render("pages/404.ejs", {session : req.session});
 });
 
 module.exports = app;

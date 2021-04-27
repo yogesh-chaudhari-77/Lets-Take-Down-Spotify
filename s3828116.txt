@@ -1,0 +1,1174 @@
+*******************************************
+            Student Details
+*******************************************
+Student ID: s3828116
+Student Name: Yogeshwar Girish Chaudhari
+Course and Program: Master of Information Technology
+Subject: Cloud Computing (Sem 1, 2021)
+
+*******************************************
+
+
+*******************************************
+                Config
+*******************************************
+credentials have been removed from this file 
+for security reasosn
+*******************************************
+
+/**
+ * AWS config object
+ * The credentials in this file will be passed before making call to the AWS services
+ * Make sure that these credentials are not shared with any body
+ */
+const aws_config = {
+    "username" : "",
+    "password" : "",
+    "acess_key_id" : "",
+    "secret_access_key" : "",
+    "region" : "",
+    "console_login_link" : "",
+
+    // S3 Bucket configuration
+    "s3_config" : {
+        "bucket_name" : "music-subscription-app-bucket",
+        "bucket_region" : "ap-southeast-2"
+    }
+};
+
+
+module.exports = aws_config;
+
+
+*******************************************
+                Controllers
+*******************************************
+
+*******************************************
+                AuthController.js
+*******************************************
+var session = require('express-session');
+
+//AWS Requires
+var AWS = require("aws-sdk");
+
+// Config Requires
+var aws_config = require("../config/aws_admin_credentials_for_programmatic_access.js");
+
+AWS.config.update({
+    region: "ap-southeast-2",
+    accessKeyId: aws_config.acess_key_id,
+    secretAccessKey: aws_config.secret_access_key
+});
+
+// The region is seeting is updated globally
+var dynamodb_client = new AWS.DynamoDB();
+
+/*
+    Renders the login page
+*/
+const login_get = (req, res) => {
+    res.render("auth/login", {session : req.session});
+}
+
+/*
+    Renders the signup page
+*/
+const signup_get = (req, res) => {
+    res.render("auth/signup", {session : req.session});
+}
+
+/*
+    Accepts user login credentials and returns the login token
+    References : [7]
+ */
+const login_post = (req, res) => {
+    
+    const email = req.fields.email;
+    const password = req.fields.password;
+
+    var params = {    
+        TableName: 'login',
+        ProjectionExpression: 'email, password, username',    // Equivalent to select clause
+        KeyConditionExpression: 'email = :e',                 // Equivalent to where clause
+
+        
+        ExpressionAttributeValues: {
+          ':e': {S: email}
+        }
+      };
+
+      dynamodb_client.query(params, (err, data) => {
+        
+        // Validating matching records count
+        if(data != null && data.Items.length == 1){
+            
+            const record = data.Items[0];
+
+            // Validating Password
+            if(password == record.password.S){
+                req.session.email = record.email.S;
+                req.session.username = record.username.S;
+
+                res.json({"status" : "success"});
+            }else{
+                res.json({"status" : "failed"});
+            }
+            
+        }else{
+            console.log(err);
+            res.json({"status" : "failed"});
+        }
+
+      });
+}
+
+/*
+    [7]
+    Accepts user credentials and create a new account.
+    It also create a login token which will be sent back to the client
+*/
+const signup_post = (req, res) => {
+
+    const email = req.fields.email;
+    const username = req.fields.username;
+    const password = req.fields.password;
+
+    // [7] - Querying and Scanning DynamoDB table
+    var params = {    
+        TableName: 'login',
+        ProjectionExpression: 'email',           // Equivalent to select clause
+        KeyConditionExpression: 'email = :e',    // Equivalent to where clause
+        ExpressionAttributeValues: {
+          ':e': {S: email}
+        }
+      };
+
+      dynamodb_client.query(params, (err, data) => {
+        
+        console.log("data --> ", data);
+        
+        // There is no record with given email
+        if(data.Items.length == 0){
+            
+            var create_user_login = () => {
+
+                var params = {
+                    TableName: 'login',
+                    Item: {
+                        'email': { S: email },
+                        'password': { S: password },
+                        'username': { S: username }
+                    }
+                };
+
+                // Call DynamoDB to add the item to the table
+                dynamodb_client.putItem(params, (err, data) => {
+                    if (err) {
+                        console.error("Error", err);
+                        res.json({"status": "failed", "err_msg" : "Unknown error occured. Please try again."});
+                    } else {
+                        res.json({"status": "success"});
+                    }
+                });
+            }
+
+            create_user_login();
+
+        }else{
+            console.log(err);
+            res.json({"status" : "failed", "err_msg" : "The email already exists."});
+        }
+
+      });
+}
+// End of signup post
+
+/**
+ * Logout Function - Destroys the session and then redirects to the home page.
+ */
+const logout_get = (req, res) => {
+
+    req.session.destroy(function(err) {
+        res.redirect("/");
+    })
+}
+
+
+module.exports = {
+    login_get, signup_get, login_post, signup_post, logout_get
+}
+
+*******************************************
+        subscriptionController.js
+*******************************************
+
+var session = require('express-session');
+const { v4: uuidv4 } = require('uuid');
+
+//AWS Requires
+var AWS = require("aws-sdk");
+
+// Config Requires
+var aws_config = require("../config/aws_admin_credentials_for_programmatic_access.js");
+
+AWS.config.update({
+    region: "ap-southeast-2",
+    accessKeyId: aws_config.acess_key_id,
+    secretAccessKey: aws_config.secret_access_key
+});
+
+// The region is seeting is updated globally
+var dynamodb_client = new AWS.DynamoDB();
+
+
+/**
+ * User can subscribe to the music
+ * @param {*} req - music_id to subscribe to, email of the user 
+ * @param {*} res 
+ */
+const subscribe_post = (req, res) => {
+    console.log(req.fields);
+
+    var music_id = req.fields.music_id;
+    var email = req.session.email;
+
+    var params = {
+        TableName: 'music_subscription',
+        Item: {
+            'subscription_id': { S: uuidv4() },
+            'music_id': { S: music_id },
+            'email': { S: email },
+        }
+    };
+
+    // Call DynamoDB to add the item to the table
+    dynamodb_client.putItem(params, (err, data) => {
+        if (err) {
+            console.error("Error", err);
+            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
+        } else {
+            console.log(data);
+            res.json({ "status": "success" });
+        }
+    });
+}
+
+
+/**
+ * User can unsubscribe the music, he has subscribed already.
+ * @param {*} req - Subscription ID
+ * @param {*} res - Json status response - success or failed
+ */
+const unsubscribe_post = (req, res) => {
+    
+    console.log(req.fields);
+
+    var subscription_id = req.fields.subscription_id;
+
+    var params = {
+        TableName: 'music_subscription',
+        Key: { 
+            "subscription_id" : {S : subscription_id}
+        }
+    };
+
+    // Call DynamoDB to add the item to the table
+    dynamodb_client.deleteItem(params, (err, data) => {
+        if (err) {
+            console.error("Error", err);
+            res.json({ "status": "failed", "err_msg": "Unknown error occured. Please try again." });
+        } else {
+            console.log("Delete Item Success", data);
+            res.json({ "status": "success" });
+        }
+    });
+}
+
+
+/**
+ * Retrives all the subscribed posts of this user
+ * @param {*} req - email address of the user
+ * @param {*} res - List of subcribed music containing title, year, artitst, image of the album
+ */
+const subscribed_post = (req, res) => {
+    var email = req.session.email;
+
+    console.log("email", req.session.email);
+    console.log("username", req.session.username);
+
+    var params = {
+        TableName: 'music_subscription',
+        ProjectionExpression: 'subscription_id, music_id',
+        FilterExpression: 'contains(email, :e)',
+        ExpressionAttributeValues: {
+            ':e': { S: email }
+        }
+    };
+
+    dynamodb_client.scan(params, function (err, data) {
+
+        if (err) {
+            console.log("Error", err);
+        } else {
+
+            if(data.Items.length <= 0){
+                res.json({ "status": "success", "music": {}});
+                return;
+            }
+
+            console.log("Success", data);
+            var music_id_in_obj = {};
+            var music = {};
+
+            // [8]
+            data.Items.forEach(function (element, index) {
+                var musicIdKey = ":musicIdValue" + index;
+                music_id_in_obj[musicIdKey.toString()] = { "S": element.music_id.S };
+                music[element.music_id.S] = {
+                    "subscription_id": element.subscription_id.S
+                }
+            });
+
+            console.log("This is the format : "+Object.keys(music_id_in_obj).toString());
+            // [8]
+            var params = {
+                TableName: 'music',
+                ProjectionExpression: 'id, title, artist, #year, img_url',
+                FilterExpression: "id IN (" + Object.keys(music_id_in_obj).toString() + ")",
+                ExpressionAttributeValues: music_id_in_obj,
+                ExpressionAttributeNames: {
+                    "#year": "year"
+                }
+            };
+
+            console.log(params);
+
+            //console.log("Object.keys(titleObject).toString()", Object.keys(music_id_in_obj).toString());
+            //console.log("titleObject", music_id_in_obj);
+
+            dynamodb_client.scan(params, function (err, data) {
+
+                if (err) {
+                    console.log("Error", err);
+                } else {
+                    console.log("Second Query", data);
+
+                    data.Items.forEach(function (element, index, array) {
+                        music[element.id.S]["id"] = element.id.S;
+                        music[element.id.S]["title"] = element.title.S;
+                        music[element.id.S]["artist"] = element.artist.S;
+                        music[element.id.S]["year"] = element.year.S;
+                        music[element.id.S]["img_url"] = element.img_url.S;
+                    });
+
+                    res.json({ "status": "success", "music": music });
+
+                }
+            });
+        }
+    });
+}
+
+module.exports = {subscribe_post, unsubscribe_post, subscribed_post};
+
+
+*******************************************
+                Routes
+*******************************************
+*******************************************
+            authRoutes.js
+*******************************************
+const express = require('express');
+const authController = require('../controllers/authController');
+
+const router = express.Router();
+
+router.get('/login', authController.login_get);
+router.get('/signup', authController.signup_get);
+router.post('/login', authController.login_post);
+router.post('/signup', authController.signup_post);
+router.get('/logout', authController.logout_get);
+
+module.exports = router;
+
+
+*******************************************
+        subscriptionRoutes.js
+*******************************************
+const express = require('express');
+const subscriptionController = require('../controllers/subscriptionController');
+
+const router = express.Router();
+
+router.post('/music/subscribe', subscriptionController.subscribe_post);
+router.post('/music/unsubscribe', subscriptionController.unsubscribe_post);
+router.post('/music/subscribed', subscriptionController.subscribed_post);
+
+module.exports = router;
+
+*******************************************
+                Views
+*******************************************
+
+*******************************************
+                auth/login.ejs
+*******************************************
+
+<!doctype html>
+<html lang="en">
+
+<!--Head tag goes here -->
+<%- include('./../partials/head.ejs'); %>
+
+  <script>
+
+    function login() {
+      let ajaxRequest = new ajaxFunction();
+      let email = document.getElementById("email").value;
+      let password = document.getElementById("password").value;
+
+      var form_data = new FormData();
+      form_data.append("email", email);
+      form_data.append("password", password);
+
+      ajaxRequest.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            
+            document.getElementById("login_form_err_msg").style.display = "block";
+            document.getElementById("login_form_err_msg").innerHTML = "email or password is invalid";
+            document.getElementById("email").focus();
+            return;
+
+          } else {
+
+            // Clear the error messages if any
+            document.getElementById("login_form_err_msg").style.display = "none";
+            document.getElementById("login_form_err_msg").innerHTML = "";
+
+            // Redirect to the forum home screen
+            window.location = "/main";
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "POST", "/login", form_data, null);
+    }
+    // End of login()
+
+  </script>
+
+  <body  style="background-image: url('images/8.svg');background-size:cover">
+    <!-- Header goes here -->
+    <%- include('./../partials/navbar.ejs'); %>
+
+      <!-- Actual body goes here -->
+      <div class="container mt-4">
+        <div class="row">
+          <div class="col-md-4 col-xs-12 col-lg-4"></div>
+          <div class="col-md-4 col-xs-12 col-lg-4">
+            
+            <!-- [12] -->
+            <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+              <div class="card-body">
+                <h5 class="card-title">Login</h5>
+                <h6 class="card-subtitle mb-2 text-muted">It's good to see you back!</h6>
+
+                <form onsubmit="event.preventDefault();" id="login_form">
+
+                  <div class="form-group mb-3">
+                    <label class="control-label" for="email">Email:</label>
+                    <input type="email" id="email" class="input-md form-control" value="s3828116@student.rmit.edu.au" required />
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="control-label" for="password">Password:</label>
+                    <input type="password" id="password" class="input-md form-control" value="012345" required />
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <label class="text-danger" id="login_form_err_msg" style="display:none"></label>
+                  </div>
+
+                  <div class="form-group mb-3">
+                    <button class="btn btn-outline-success btn-md form-control" onclick="login();">Login</button>
+                  </div>
+                </form>
+
+                Don't have an account? <a href="/signup">Register here</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Actual body ends here-->
+
+      <!-- Footer goes here -->
+      <%- include('./../partials/footer.ejs'); %>
+  </body>
+
+</html>
+
+
+*******************************************
+                auth/signup.ejs
+*******************************************
+
+<!doctype html>
+<html lang="en">
+
+<!--Head tag goes here -->
+<%- include('./../partials/head.ejs'); %>
+
+    <script>
+
+        function register() {
+            let ajaxRequest = new ajaxFunction();
+
+            // Getting basic fields
+            let email = document.getElementById("email").value;
+            let username = document.getElementById("username").value;
+            let password = document.getElementById("password").value;
+
+            // Packing the data packet
+            var form_data = new FormData();
+            form_data.append("email", email);
+            form_data.append("username", username);
+            form_data.append("password", password);
+
+            ajaxRequest.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        document.getElementById("register_form_err_msg").style.display = "block";
+                        document.getElementById("register_form_err_msg").innerHTML = response.err_msg;
+                        return;
+                    } else {
+
+                        // Clear the error messages if any
+                        document.getElementById("register_form_err_msg").style.display = "none";
+                        document.getElementById("register_form_err_msg").innerHTML = "";
+
+                        // Redirect to the login page for re-login using new credentials
+                        window.location = "/login";
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/signup", form_data, null);
+        }
+        // end of register function
+
+    </script>
+
+    <body style="background-image: url('images/6.svg');background-size:cover">
+        <!-- Header goes here -->
+        <%- include('./../partials/navbar.ejs'); %>
+
+            <!-- Actual body goes here -->
+            <div class="container mt-3">
+                <div class="row">
+                    <div class="col-xs-12 col-md-4 col-lg-4">
+                        <!--[12]-->
+                        <div class="card shadow-lg p-3 mb-5 bg-white rounded">
+                            <div class="card-body">
+                                <h5 class="card-title">Register</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">Awesome music is awating</h6>
+
+                                <form onsubmit="event.preventDefault();" id="register_form">
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="email">Email:</label>
+                                        <input type="email" id="email" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="username">Username:</label>
+                                        <input type="text" id="username" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="control-label" for="password">Password:</label>
+                                        <input type="password" id="password" class="input-md form-control" required />
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <span class="text-danger" id="register_form_err_msg"
+                                            style="display:none;"></span>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <button class="btn btn-outline-success btn-md form-control"
+                                            onclick="register();">Let's Get
+                                            Started</button>
+                                    </div>
+                                </form>
+
+                                Already have an account ? <a href="/login">Login here</a>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+            <!-- Actual body ends here-->
+
+            <!-- Footer goes here -->
+            <%- include('./../partials/footer.ejs'); %>
+    </body>
+
+</html>
+
+
+*******************************************
+                partials/head.ejs
+*******************************************
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6" crossorigin="anonymous">
+    
+    <!-- Separate Popper and Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js" integrity="sha384-SR1sx49pcuLnqZUnnPwx6FCym0wLsk5JZuNx2bPPENzswTNFaQU1RDvt3wT4gWFG" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.min.js" integrity="sha384-j0CNLUeiqtyaRmlzUHCPZ+Gy5fQu0dQ6eZ/xAww941Ai1SxSY+0EQqNXNE6DZiVc" crossorigin="anonymous"></script>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <script src="https://use.fontawesome.com/0d6bbecfc5.js"></script>
+    
+    <script src="/js/ajaxFunction.js"></script>
+
+    <title>Music Subscription App</title>
+  </head>
+
+
+*******************************************
+                partials/navbar.ejs
+*******************************************
+
+    <!--[11]-->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">Walkman</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="#"><i class="fa fa-home" aria-hidden="true"></i></a>
+            </li>
+            
+            <li class="nav-item">
+            <a class="nav-link" aria-current="page" href="#"><i class="fa fa-user" aria-hidden="true"></i></a>
+            </li>
+            
+        </ul>
+
+        <% if (session != undefined && session != null && session.username != undefined && session.username != null) { %>
+            <a href="/logout" class="btn btn-outline-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
+        <% } %>
+        <% if (session != undefined && session != null && (session.username == undefined || session.username == null ) ) { %>
+            <a class="btn btn-outline-dark" aria-current="page" href="/login"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>
+            &nbsp;
+            <a class="btn btn-outline-dark" aria-current="page" href="/signup"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>
+        <% } %>
+        </div>
+    </div>
+    </nav>
+
+
+*******************************************
+                index.ejs
+*******************************************
+<!doctype html>
+<html lang="en">
+
+<!--Head tag goes here -->
+<%- include('./partials/head.ejs'); %>
+
+  <script>
+
+    function download_images() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 1 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/download_images_from_url", null, null);
+    }
+
+    function upload_images() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 2 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/upload_images_to_s3", null, null);
+    }
+
+    function create_table() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 3 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/create_music_table", null, null);
+    }
+
+    function populate_database() {
+      let ajaxRequest = new ajaxFunction();
+
+      ajaxRequest.onreadystatechange = function () {
+        console.log(ajaxRequest);
+        if (this.readyState == 4 && this.status == 200) {
+
+          var response = JSON.parse(this.responseText);
+
+          if (response.status == "failed") {
+            return;
+          } else {
+            alert("Step 4 Completed");
+          }
+        }
+      };
+
+      send_request(ajaxRequest, "GET", "/populate_music_table", null, null);
+    }
+  </script>
+
+  <body style="background-image:url('images/8.svg');background-size:cover;">
+    <!-- Header goes here -->
+    <%- include('./partials/navbar.ejs'); %>
+
+      <!-- Actual body goes here -->
+
+      <div class="container mt-3">
+        <div class="row">
+
+          <div class="col-md-12">
+            <div class="text-center mt-5">
+              <h1 style="font-size:85px">Let's Take Down Spotify</h1>
+            </div>
+            <hr />
+            <br />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="">
+              <ul class="list-group list-group-horizontal text-center">
+                <li class="list-group-item active">Tech Stack</li>
+                <li class="list-group-item flex-fill">AWS</li>
+                <li class="list-group-item flex-fill">EC2 - Compute</li>
+                <li class="list-group-item flex-fill">DynamoDB - Database</li>
+                <li class="list-group-item flex-fill">Simple Storage Service (S3)</li>
+                <li class="list-group-item flex-fill">Bootstrap 5.0</li>
+                <li class="list-group-item flex-fill">NodeJS - Express</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-5">
+          <h2 class="text-primary">Basic Setup</h1>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12 text-center">
+
+            <button class="btn btn-outline-primary btn-sm" onclick="download_images()">Download images</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="upload_images()">Upload images</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="create_table()">Create Table</button>
+            <button class="btn btn-outline-primary btn-sm" onclick="populate_database()">Populate Database</button>
+
+
+          </div>
+        </div>
+
+      </div>
+      <!-- Actual body ends here-->
+
+      <br /><br /><br />
+      <!-- Footer goes here -->
+      <%- include('./partials/footer.ejs'); %>
+  </body>
+
+</html>
+
+*******************************************
+                main.ejs
+*******************************************
+
+<!doctype html>
+<html lang="en">
+
+    <style>
+        /* No scroll bar for messgaes area */
+        #subscribed_music_list::-webkit-scrollbar {
+          display: none;
+        }
+
+        #query_result_list::-webkit-scrollbar {
+          display: none;
+        }
+    </style>
+
+<!--Head tag goes here -->
+<%- include('./partials/head.ejs'); %>
+
+    <script>
+        $(document).ready(function(){
+            get_subscribed_music(); 
+        });
+    </script>
+    <script>
+        
+        function get_subscribed_music(){
+            let ajaxRequest = new ajaxFunction();
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                        if (response.music) {
+                            console.log(response.music);
+                            $("#query_results_div").attr("hidden", true);
+                            $("#query_result_list").html("");
+                            $("#subscribed_music_list").html("");
+                            $("#subscribed_music_div").attr("hidden", false);
+
+                            var music_ids = Object.keys(response.music);
+                            for(var music_id of music_ids){
+                                var html_template = create_music_subscribed_card(response.music[music_id]);
+                                $("#subscribed_music_list").prepend(html_template);
+                            }
+
+                            if(music_ids.length == 0){
+                                $("#subscribed_music_list").html("<span class='text-muted mb-3' style='font-size:20px'>You have not subscribed to any music yet.</span>");
+                            }
+                        }
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/subscribed", null, null);
+        }
+
+        function subscribe_music(music_id){
+            let ajaxRequest = new ajaxFunction();
+
+            var form_data = new FormData();
+            form_data.append("music_id", music_id);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                        // Refresh the subscribed list
+                        get_subscribed_music();
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/subscribe", form_data, null);
+        }
+
+        function unsubscribe_music(el, subscription_id){
+
+            let ajaxRequest = new ajaxFunction();
+
+            var form_data = new FormData();
+            form_data.append("subscription_id", subscription_id);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        return;
+                    } else {
+                       $(el).parent().parent().fadeOut();
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/unsubscribe", form_data, null);
+        }
+        /**
+            User can query music using title, artist and year combination.
+            Returns the list of results matching search criteria.
+            endpoint: /forum
+        */
+        function query_music() {
+            let ajaxRequest = new ajaxFunction();
+            let title = document.getElementById("title").value;
+            let year = document.getElementById("year").value;
+            let artist = document.getElementById("artist").value;
+
+            var form_data = new FormData();
+            form_data.append("title", title);
+            form_data.append("year", year);
+            form_data.append("artist", artist);
+
+            ajaxRequest.onreadystatechange = function () {
+                console.log(ajaxRequest);
+                if (this.readyState == 4 && this.status == 200) {
+                    var response = JSON.parse(this.responseText);
+
+                    if (response.status == "failed") {
+                        document.getElementById("music_query_form_err_msg").style.display = "block";
+                        document.getElementById("music_query_form_err_msg").innerHTML = "";
+                        return;
+                    } else {
+
+                        // Clear the error messages if any
+                        document.getElementById("music_query_form_err_msg").style.display = "none";
+                        document.getElementById("music_query_form_err_msg").innerHTML = "";
+
+                        if (response.music) {
+                            $("#query_results_div").attr("hidden", false);
+                            $("#subscribed_music_div").attr("hidden", true);
+                            $("#query_result_list").html("");
+
+                            for(var result of response.music){
+                                var html_template = create_music_query_card(result);
+                                $("#query_result_list").prepend(html_template);
+                            }
+
+                            if(response.music.length == 0){
+                                $("#query_result_list").html("<span class='text-muted mb-3' style='font-size:20px'>No result is retrieved. Please query again</span>");
+                            }
+                        }
+                    }
+                }
+            };
+
+            send_request(ajaxRequest, "POST", "/music/query", form_data, null);
+        }
+        // end of query_music()
+
+        /**
+         * Clears the entire music query form
+         */
+        function clear_music_query_form() {
+
+            // Clear the error messages if any
+            document.getElementById("music_query_form_err_msg").style.display = "none";
+            document.getElementById("music_query_form_err_msg").innerHTML = "";
+
+            // Reseting form fields
+            document.getElementById("music_query_form").reset();
+        }
+
+        function new_query(){
+            clear_music_query_form();
+            $("#query_result_list").html("");
+            document.getElementById("title").focus();
+        }
+
+        function return_to_subscribed_music(){
+            clear_music_query_form();
+            $("#query_result_list").html("");
+            
+            get_subscribed_music();
+
+            $("#query_results_div").attr("hidden", true);
+            $("#subscribed_music_div").attr("hidden", false);
+        }
+
+        // Generates a html template for query result and returns it.
+        function create_music_query_card(music) {
+
+            var default_img = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22574%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20574%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17812173647%20text%20%7B%20fill%3Argba(255%2C255%2C255%2C.75)%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A29pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17812173647%22%3E%3Crect%20width%3D%22574%22%20height%3D%22180%22%20fill%3D%22%23777%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22212.8125%22%20y%3D%22103.00312500000001%22%3E574x180%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E";
+            var image_url = (music.img_url == "" || music.img_url == null) ? default_img : music.img_url;
+            var query_card = "<div class='card bg-dark text-white mb-3'>" +
+                "<img class='card-img' src='"+image_url+"' style='max-height: 200px;background-size: cover;opacity: 0.4;' alt='Card image'>" +
+                "<div class='card-img-overlay'>" +
+                "   <h5 class='card-title'>" + music.title+ "</h5>" +
+                "   <p class='card-text'>Artist: " + music.artist + " Year: "+music.year+"</p>" +
+                "   <a id='subscribe_"+music.id+"' onclick='subscribe_music(\""+music.id+"\")' class='btn btn-outline-light'><i class='fa fa-plus' aria-hidden='true'></i> Subsribe</a>" +
+                "</div>" +
+                "</div>";
+
+            return query_card;
+        }
+        // end of create_post_card()
+
+        // Generates a html template for subscribed music and returns it
+        function create_music_subscribed_card(music) {
+            var default_img = "data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22574%22%20height%3D%22180%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20574%20180%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17812173647%20text%20%7B%20fill%3Argba(255%2C255%2C255%2C.75)%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A29pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17812173647%22%3E%3Crect%20width%3D%22574%22%20height%3D%22180%22%20fill%3D%22%23777%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%22212.8125%22%20y%3D%22103.00312500000001%22%3E574x180%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E";
+            var image_url = (music.img_url == "" || music.img_url == null) ? default_img : music.img_url;
+            var music_card = "<div class='card bg-dark text-white mb-3'>" +
+                "<img class='card-img' src='"+image_url+"' style='max-height: 200px;background-size: cover;opacity: 0.4;' alt='Card image'>" +
+                "<div class='card-img-overlay'>" +
+                "   <h5 class='card-title'>" + music.title+ "</h5>" +
+                "   <p class='card-text'>Artist: " + music.artist + " Year: "+music.year+"</p>" +
+                "   <a onclick='unsubscribe_music(this, \""+music.subscription_id+"\")' class='btn btn-outline-light'><i class='fa fa-minus-circle'></i> Remove</a>" +
+                "</div>" +
+                "</div>";
+
+            return music_card;
+        }
+    // end of create_post_card()
+    </script>
+
+
+
+    <body style="background-image: url('images/8.svg');background-size:cover;">
+        <!-- Header goes here -->
+        <%- include('./partials/navbar.ejs'); %>
+
+            <!-- Actual body goes here -->
+
+            <div class="container mt-3">
+                <div class="row">
+                    <!-- Start of user area-->
+                    <div class="col-md-3" id="user_area">
+                        <!--[12]-->
+                        <div class="card shadow p-3 mb-5 bg-white rounded">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fa fa-user" aria-hidden="true"></i> User Area</h5>
+                                <div class="text-center">
+                                    <img src="/images/user_male.png" height="120px" width="120px" class='img img-responsive rounded-circle'>
+                                </div>
+                            </div>
+                            <h5 class="card-title text-center">
+                                <a href="" style="color: inherit;text-decoration: none;"><%= session.username %></a>
+                            </h5>
+                        </div>
+                    </div>
+                    <!-- End of user area -->
+
+                    <div class="col-md-9">
+
+                        <!-- Message posting area starts here -->
+                        <div class="row">
+                            <div class="col-md-5">
+
+                                <div class="card shadow p-3 mb-5 bg-white rounded">
+                                    <div class="card-body">
+                                        <h5 class="card-title"><i class="fa fa-search" aria-hidden="true"></i> Query Area</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">Find music that moves you</h6>
+
+                                        <form onsubmit="event.preventDefault();" id="music_query_form">
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Title:</label>
+                                                <input type="text" id="title" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Year:</label>
+                                                <input type="text" id="year" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <label class="control-label">Artist:</label>
+                                                <input type="text" id="artist" class="input-md form-control" />
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <span class="text-danger" id="music_query_form_err_msg" hidden></span>
+                                            </div>
+
+                                            <div class="form-group mb-3">
+                                                <button class="btn btn-outline-dark btn-md form-control"
+                                                    onclick="query_music()">Query</button>
+                                            </div>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-7" id="subscribed_music_div">
+                                <h5 class="card-title"><i class="fa fa-music" aria-hidden="true"></i> Subscribed Music</h5>
+                                <hr />
+                                <div id="subscribed_music_list" style="overflow:auto;max-height: 70vh;" class="mb-1">
+                                </div>
+
+                                <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> Find New Music</a>
+                            </div>
+
+                            <div class="col-md-7" id="query_results_div" hidden>
+                                <h5 class="card-title"><i class="fa fa-list" aria-hidden="true"></i> Query Results</h5>
+                                <hr />
+                                <div id="query_result_list" style="overflow:auto;max-height: 70vh;" class="mb-1">
+                                </div>
+                                
+                                <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> New Search</a>
+                                <a id="" onclick="return_to_subscribed_music();" class="btn btn-md btn-outline-primary"><i class="fa fa-chevron-circle-left" aria-hidden="true"></i> Return to Subscribed Music</a>
+                            </div>
+                        </div>
+                        <!-- Message posting area ends here -->
+                    </div>
+                </div>
+            </div>
+            <!-- Actual body ends here-->
+
+            <!-- Footer goes here -->
+            <%- include('./partials/footer.ejs'); %>
+    </body>
+
+</html>
+
+
+*******************************************
+                Task 2 
+*******************************************

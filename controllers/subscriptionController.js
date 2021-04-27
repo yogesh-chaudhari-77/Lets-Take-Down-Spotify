@@ -118,13 +118,15 @@ const subscribed_post = (req, res) => {
 
             // [8]
             data.Items.forEach(function (element, index) {
-                var musicIdKey = ":titlevalue" + index;
+                var musicIdKey = ":musicIdValue" + index;
                 music_id_in_obj[musicIdKey.toString()] = { "S": element.music_id.S };
                 music[element.music_id.S] = {
                     "subscription_id": element.subscription_id.S
                 }
             });
 
+            console.log("This is the format : "+Object.keys(music_id_in_obj).toString());
+            // [8]
             var params = {
                 TableName: 'music',
                 ProjectionExpression: 'id, title, artist, #year, img_url',
@@ -135,8 +137,10 @@ const subscribed_post = (req, res) => {
                 }
             };
 
-            console.log("Object.keys(titleObject).toString()", Object.keys(music_id_in_obj).toString());
-            console.log("titleObject", music_id_in_obj);
+            console.log(params);
+
+            //console.log("Object.keys(titleObject).toString()", Object.keys(music_id_in_obj).toString());
+            //console.log("titleObject", music_id_in_obj);
 
             dynamodb_client.scan(params, function (err, data) {
 

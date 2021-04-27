@@ -3,7 +3,11 @@
 
     <style>
         /* No scroll bar for messgaes area */
-        #subscribed_music_div::-webkit-scrollbar {
+        #subscribed_music_list::-webkit-scrollbar {
+          display: none;
+        }
+
+        #query_result_list::-webkit-scrollbar {
           display: none;
         }
     </style>
@@ -221,7 +225,7 @@
 
 
 
-    <body>
+    <body style="background-image: url('images/8.svg');background-size:cover;">
         <!-- Header goes here -->
         <%- include('./partials/navbar.ejs'); %>
 
@@ -231,6 +235,7 @@
                 <div class="row">
                     <!-- Start of user area-->
                     <div class="col-md-3" id="user_area">
+                        <!--[12]-->
                         <div class="card shadow p-3 mb-5 bg-white rounded">
                             <div class="card-body">
                                 <h5 class="card-title"><i class="fa fa-user" aria-hidden="true"></i> User Area</h5>
@@ -289,7 +294,7 @@
                             <div class="col-md-7" id="subscribed_music_div">
                                 <h5 class="card-title"><i class="fa fa-music" aria-hidden="true"></i> Subscribed Music</h5>
                                 <hr />
-                                <div id="subscribed_music_list">
+                                <div id="subscribed_music_list" style="overflow:auto;max-height: 70vh;" class="mb-1">
                                 </div>
 
                                 <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> Find New Music</a>
@@ -298,7 +303,7 @@
                             <div class="col-md-7" id="query_results_div" hidden>
                                 <h5 class="card-title"><i class="fa fa-list" aria-hidden="true"></i> Query Results</h5>
                                 <hr />
-                                <div id="query_result_list">
+                                <div id="query_result_list" style="overflow:auto;max-height: 70vh;" class="mb-1">
                                 </div>
                                 
                                 <a id="" onclick="new_query();" class="btn btn-md btn-outline-primary"><i class="fa fa-search" aria-hidden="true"></i> New Search</a>

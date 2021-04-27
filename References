@@ -12,8 +12,7 @@
 
 [7] "Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html. [Accessed: 10- Apr- 2021].
 
-[8]
-Using IN clause in DynamoDB
+[8] H. dynamodb, N. Goswami, N. Goswami and N. Goswami, "How to use “IN” statement in FilterExpression using array - dynamodb", Stack Overflow, 2021. [Online]. Available: https://stackoverflow.com/questions/40283653/how-to-use-in-statement-in-filterexpression-using-array-dynamodb. [Accessed: 27- Apr- 2021].
 
 [9] "Creating and Using Tables in DynamoDB - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-examples-using-tables.html. [Accessed: 10- Apr- 2021].
 

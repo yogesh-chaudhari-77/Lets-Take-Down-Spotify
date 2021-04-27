@@ -1,6 +1,5 @@
 
-  <!-- Mark Otto, A. B. C.
-       Mark Otto, a. (2021) Introduction, Getbootstrap.com. Available at: https://getbootstrap.com/docs/4.0/getting-started/introduction/ (Accessed: 9 March 2021).-->
+  <!--[11]-->
        <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
           <a class="navbar-brand" href="#">Walkman</a>
@@ -20,10 +19,10 @@
               
             </ul>
     
-            <% if ( session != null && session != undefined && session.username != undefined && session.username != null) { %>
+            <% if (session != undefined && session != null && session.username != undefined && session.username != null) { %>
               <a href="/logout" class="btn btn-outline-danger"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
             <% } %>
-            <% if ( session != null && session != undefined && (session.username == undefined || session.username == null ) ) { %>
+            <% if (session != undefined && session != null && (session.username == undefined || session.username == null ) ) { %>
               <a class="btn btn-outline-dark" aria-current="page" href="/login"><i class="fa fa-sign-in" aria-hidden="true"></i> Login</a>
                 &nbsp;
               <a class="btn btn-outline-dark" aria-current="page" href="/signup"><i class="fa fa-user-plus" aria-hidden="true"></i> Register</a>
