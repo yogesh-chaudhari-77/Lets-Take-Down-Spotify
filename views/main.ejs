@@ -132,6 +132,7 @@
                         return;
                     } else {
 
+                        console.log("subscribed_music", response.subscribed_music);
                         // Clear the error messages if any
                         document.getElementById("music_query_form_err_msg").style.display = "none";
                         document.getElementById("music_query_form_err_msg").innerHTML = "";
@@ -144,6 +145,11 @@
                             for(var result of response.music){
                                 var html_template = create_music_query_card(result);
                                 $("#query_result_list").prepend(html_template);
+
+                                if(response.subscribed_music.indexOf(result.id) > -1){
+                                    $("#subscribe_"+result.id).text("Already Subscribed");
+                                    $("#subscribe_"+result.id).addClass("disabled");
+                                }
                             }
 
                             if(response.music.length == 0){

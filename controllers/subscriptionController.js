@@ -21,7 +21,7 @@ var dynamodb_client = new AWS.DynamoDB();
  * User can subscribe to the music
  * @param {*} req - music_id to subscribe to, email of the user 
  * @param {*} res 
- */
+ */ 
 const subscribe_post = (req, res) => {
     console.log(req.fields);
 

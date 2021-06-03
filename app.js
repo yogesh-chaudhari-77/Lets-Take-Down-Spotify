@@ -39,7 +39,7 @@ var s3_client = new AWS.S3();
 const app = express();
 
 // Listening to requests on 3000 port number
-app.listen(3000);
+app.listen(80);
 
 // Using public and node_modules as static server renders
 app.use(express.static("public"));
@@ -81,6 +81,7 @@ app.post("/music/query", (req, res) => {
     var title = req.fields.title;
     var year = req.fields.year;
     var artist = req.fields.artist;
+    var email = req.session.email;
 
     var params = {
         TableName: 'music',
@@ -103,6 +104,7 @@ app.post("/music/query", (req, res) => {
         } else {
             console.log("Success", data);
             var music = [];
+            var subscribed_music = [];
             data.Items.forEach(function (element, index, array) {
                 music.push({
                     "id": element.id.S,
@@ -113,7 +115,29 @@ app.post("/music/query", (req, res) => {
                 });
             });
 
-            res.json({ "status": "success", "music": music });
+            //
+            var already_subscribed_music = {
+                TableName: 'music_subscription',
+                ProjectionExpression: 'subscription_id, music_id',
+                FilterExpression: 'contains(email, :e)',
+                ExpressionAttributeValues: {
+                    ':e': { S: email }
+                }
+            };
+
+            dynamodb_client.scan(already_subscribed_music, function (err, data) {
+
+                if (err) {
+                    console.log("Error - already_subscribed_music: ", err);
+                } else {
+                    data.Items.forEach(function (element, index) {
+                        subscribed_music.push(element.music_id.S);
+                    });
+                }
+
+                res.json({ "status": "success", "music": music, "subscribed_music": subscribed_music});
+            });
+            //
         }
     });
 });

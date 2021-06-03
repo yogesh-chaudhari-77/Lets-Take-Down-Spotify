@@ -1172,3 +1172,139 @@ module.exports = router;
 *******************************************
                 Task 2 
 *******************************************
+
+Motivation:
+
+For people all over the world, international fund transfers are a vital and much-needed operation. In the year 2018 alone, 
+approx USD 200 billion has been remitted to Asian countries and the market is growing ever since.
+Banks are the key players in this fund transfer market, and they profit the most from it. However, the most significant 
+drawbacks of bank transfers are the trading costs, hidden charges, and the time it takes to complete a fund transfer 
+transaction. So I devised a plan to introduce an electronic payment service that is quick, stable, offers real-time exchange rate, and, most notably, 
+free of brokerage fees.
+
+Objective:
+
+The assets would be moved from one nation to the other immediately depending on the present-day foreign exchange rate, 
+without any extra brokerages. However, a nominal fee will be charged on the sale, which will be a set sum regardless of 
+the actual amount exchanged, though it will almost certainly be much smaller. The key targeted market would be individuals 
+working or studying abroad as well as businesses that require frequent money transfers at next-to-free cost.
+
+How does it work?
+
+Consider the following situation: an individual 'P1' in-country 'C1' wishes to pass funds to an individual 'P2' in-country 'C2' 
+using the proposed program (hereafter referred to as 'IFTS' - Instant Money Transfer Service). P1 will be charged 
+transaction amount + fixed platform fees. Because having the pool of money at both locations, the transfers can be carried out immediately 
+and profit can also be realised instantly which can again be added to the pool to increase service availability.
+
+Case 1: The shared pool at the target location already has sufficient funds
+	Funds will be transferred to the receipt account immediately.
+	Several investment opportunity jobs with varied amount will be created and sent out to regional investors to refund the shared pool.
+
+	e.g. 
+	P1 is transferring AU$ 15000 to India. The shared pool in Australia has AU$ 19000. AU$ 15000 will be transferred immediately to the recipient account leaving the shared pool at AU$4000. 
+	Several investment opportunities like AUD$ 1000, AU$ 2500, AU$ 400, AU$ 6000 etc. will be created and sent out to regional investors depending on their profile.
+	On acceptances, the shared pool will again have sufficient funds to carry the next transaction.
+
+Case 2: The shared pool at the target location doesn't have sufficient funds
+	Several investment opportunity jobs with varied amount will be created immediately and sent out to regional investors to refund the shared pool.
+
+
+e.g. 
+P1 is transferring AU$ 15000 to India. The shared pool in Australia has AU$ 9000, meaning we are short by AU$ 6000.
+Several investment opportunities like AUD$ 1000, AU$ 2500, AU$ 400, AU$ 6000 etc. will be created and sent out to regional investors depending on their profile.
+On acceptances, the shared pool will again have sufficient funds to carry this transaction and surplus for the next ones.
+
+If IFTS doesn't get investor, then funds will be arranged from internal reserved investors on a temporary basis. 
+
+These funds will be returned once's shared pool regains sufficient funds from regional investors or other customers.
+
+
+But how does base pools maintain constant cash flow?
+IFTS will encourage local financial backers, the general public, even part-time workers to participate in exchange for a promised money 
+return and extra incentives after a set amount of time from the day of investment. These benefits will be offered by using the fees 
+charged on each money transfers payment. As a result, the cash balance in base pools is guaranteed. 
+
+What is achieved?
+Immediate overseas fund transfer
+Opportunity for short term and secure investment to the general public.
+IFSC can become self-sustainable through the part of transaction fees.
+Having a constant cashflow can leads to the possibility of other financial services, such as micro-lending platforms, instant business loans, 
+Business Insurance companies etc
+
+Possible AWS stack -
+
+	EC2 - General computing, application hosting
+		A monolithic application will be hosted on EC2 instances.
+
+	RDS - Transaction based database - MySQL
+		The application would heavily rely on the Transaction feature offered by RDS to maintain the consistent state of the database.
+		Any negligence would immediately result in monetary losses. Widely accepted and tested MySQL RDS will be used on 
+		AWS RDS to increase the availability and robustness of the application.
+
+	S3 - Database backups, user transaction PDF archival
+		Transactional records must be archived for inquiry purposes. A snapshot of RDS will be stored in the S3 at EOD. 
+		This snapshot will also be useful in restoring the database in case of failure.
+
+		User transaction receipt PDFs and activity logs will also be stored here.
+
+
+	Route 53 - Custom domain
+		The application will be accessed using a custom domain name. e.g. https://capitalfox.com.au
+
+
+	Lambda - Event-based triggering for sending out Investment opportunities.
+		For sending notifications to the general public about investment opportunities, the Lamda function will be deployed using AWS serverless platform which will be listening to RDS events.
+		Whenever a job is created for fund transfer, local investors will receive notification on their app dashboard or via email with information like Investment Required, Expected returns, 
+		Risk Factor, Expiry date etc.
+
+	Elastic Load Balancer
+		Handling Transactions worth USD 200 billion would require series of EC2 instances. To efficiently distribute the load among this array of EC2 instances, 
+		we would require to put these instances in 1 load balancer group. 
+
+	Cloudwatch - Automatic resource monitoring for handling peak loads during festive/public holidays times
+
+	Cloudfront - Global content delivery
+		Static files will be distributed to global regions which will be served from the data centre close to the client location easing outbound network traffic of the main servers.
+
+
+	External APIs 
+	https://fixer.io/
+		Real-time exchange rates
+
+	https://www.twilio.com/sendgrid/email-api
+		Email api for sending transaction details
+
+	https://pusher.com/
+		Based on subcribe-public model. Channel based message broadcasting.
+
+	https://stripe.com/en-au
+		Payment acceptance/processing api
+
+
+***************************************************
+		References
+***************************************************
+
+[1] "Getting started in Node.js - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/getting-started-nodejs.html. [Accessed: 10- Apr- 2021].
+
+[2] "uuid", npm, 2021. [Online]. Available: https://www.npmjs.com/package/uuid. [Accessed: 10- Apr- 2021].
+
+[3] H. libraries)?, M. Tilley and V. Yuan, "How to download a file with Node.js (without using third-party libraries)?", Stack Overflow, 2021. [Online]. Available: https://stackoverflow.com/questions/11944932/how-to-download-a-file-with-node-js-without-using-third-party-libraries. [Accessed: 10- Apr- 2021].
+
+[4] "Creating and using Amazon S3 buckets - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/s3-example-creating-buckets.html. [Accessed: 10- Apr- 2021].
+
+[5] "Uploading Files to AWS S3 with Node.js", Stack Abuse, 2021. [Online]. Available: https://stackabuse.com/uploading-files-to-aws-s3-with-node-js/. [Accessed: 10- Apr- 2021].
+
+[6] "express-session", npm, 2021. [Online]. Available: https://www.npmjs.com/package/express-session. [Accessed: 10- Apr- 2021].
+
+[7] "Querying and Scanning a DynamoDB Table - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-query-scan.html. [Accessed: 10- Apr- 2021].
+
+[8] H. dynamodb, N. Goswami, N. Goswami and N. Goswami, "How to use “IN” statement in FilterExpression using array - dynamodb", Stack Overflow, 2021. [Online]. Available: https://stackoverflow.com/questions/40283653/how-to-use-in-statement-in-filterexpression-using-array-dynamodb. [Accessed: 27- Apr- 2021].
+
+[9] "Creating and Using Tables in DynamoDB - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-examples-using-tables.html. [Accessed: 10- Apr- 2021].
+
+[10] "Reading and Writing A Single Item in DynamoDB - AWS SDK for JavaScript", Docs.aws.amazon.com, 2021. [Online]. Available: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/dynamodb-example-table-read-write.html. [Accessed: 10- Apr- 2021].
+
+[11] a. Mark Otto, "Navbar", Getbootstrap.com, 2021. [Online]. Available: https://getbootstrap.com/docs/5.0/components/navbar/. [Accessed: 10- Apr- 2021].
+
+[12] a. Mark Otto, "Cards", Getbootstrap.com, 2021. [Online]. Available: https://getbootstrap.com/docs/5.0/components/card/. [Accessed: 10- Apr- 2021].
